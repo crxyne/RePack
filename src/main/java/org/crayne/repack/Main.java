@@ -11,7 +11,7 @@ public class Main {
     public static void main(@NotNull final String... args) {
         final Logger logger = new Logger();
         final Parser parser = new Parser(logger);
-        parser.parse(new File("example.re"));
+        parser.parse(new File("example.rep"));
 
         parser.tree().ifPresent(System.out::println);
     }
