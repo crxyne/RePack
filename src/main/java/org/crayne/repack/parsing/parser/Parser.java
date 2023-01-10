@@ -25,7 +25,7 @@ public class Parser {
     private boolean encounteredError = false;
 
     private int currentTokenPos = -1;
-    private int scopeLevel = 0;
+    private int scopeLevel = 0; // TODO fix bug with scope levels not being right
     private Node parentNode;
     private final List<Node> lastScopes;
 
