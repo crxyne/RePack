@@ -11,5 +11,4 @@ match {
         *_boots      = "$(filename)_boots"
     }
     armor = "$(filename)_model"
-
 }

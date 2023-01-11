@@ -7,8 +7,6 @@ import org.crayne.repack.parsing.ast.NodeType;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -19,7 +17,6 @@ import java.util.concurrent.Callable;
 public class Tokenizer {
 
     private final Logger logger;
-
 
     private final List<String> multiSpecial;
     private final List<Token> result = new ArrayList<>();
@@ -346,15 +343,9 @@ public class Tokenizer {
 
     }
 
-    public List<Token> tokenize(@NotNull final File file) {
+    public List<Token> tokenize(@NotNull final File file, @NotNull final Collection<String> contentCollection, @NotNull final String code) {
         this.currentFile = file;
-        try {
-            return tokenize(Files.readString(file.toPath()));
-        } catch (final IOException e) {
-            lexerError("Unable to open file '" + file.getAbsolutePath() + "'.");
-            this.currentFile = null;
-            return new ArrayList<>();
-        }
+        return tokenize(contentCollection, code);
     }
 
     public void reset() {
@@ -372,21 +363,21 @@ public class Tokenizer {
         this.multilineCommented = false;
     }
 
-    public List<Token> tokenize(@NotNull final String code) {
+    public List<Token> tokenize(@NotNull final Collection<String> contentList, @NotNull final String code) {
         result.clear();
-        currentFileContent = Arrays.stream(code.split("\n")).toList();
+        currentFileContent = new ArrayList<>(contentList);
         for (int i = 0; i < code.length(); i++) {
             this.atPos = code.charAt(i);
 
             for (int j = i + 1; j < code.length() && i + 1 < code.length(); j++) {
                 nextChar = code.charAt(j);
-                if (!Character.isWhitespace(nextChar)) {
-                    for (int k = j + 1; k < code.length() && j + 1 < code.length(); k++) {
-                        nextNextChar = code.charAt(k);
-                        if (!Character.isWhitespace(nextNextChar)) break;
-                    }
-                    break;
+                if (Character.isWhitespace(nextChar)) continue;
+
+                for (int k = j + 1; k < code.length() && j + 1 < code.length(); k++) {
+                    nextNextChar = code.charAt(k);
+                    if (!Character.isWhitespace(nextNextChar)) break;
                 }
+                break;
             }
             column++;
             if (encounteredError) {

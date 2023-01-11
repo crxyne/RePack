@@ -12,8 +12,6 @@ public enum NodeType {
 
     //anything without direct value
     PARENT(null),
-    EMPTY(null),
-    SCOPE(null),
     IDENTIFIER(null),
     LET_STATEMENT(null),
     MATCH_STATEMENT(null),

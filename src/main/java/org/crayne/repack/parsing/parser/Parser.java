@@ -10,10 +10,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,17 +47,9 @@ public class Parser {
         return Optional.ofNullable(parentNode);
     }
 
-    public void parse(@NotNull final File file) {
-        try {
-            parse(Files.readString(file.toPath()));
-        } catch (final IOException e) {
-            parserError("Unable to open file '" + file.getAbsolutePath() + "'.");
-        }
-    }
-
-    public void parse(@NotNull final String content) {
-        this.currentFileContent = Arrays.stream(content.split("\n")).toList();
-        this.tokens = new Tokenizer(logger).tokenize(content);
+    public void parse(@NotNull final File file, @NotNull final String code, @NotNull final Collection<String> content) {
+        this.currentFileContent = new ArrayList<>(content);
+        this.tokens = new Tokenizer(logger).tokenize(file, content, code);
         parse();
     }
 
@@ -98,7 +88,7 @@ public class Parser {
     }
 
     private void parseScope(@NotNull final Node parent, final boolean parsingScope) {
-        if (tokens.isEmpty()) tryAdd(parent, Node.of(NodeType.EMPTY));
+        if (tokens.isEmpty()) return;
 
         nextToken();
         while (currentTokenPos < tokens.size() && !encounteredError) {
