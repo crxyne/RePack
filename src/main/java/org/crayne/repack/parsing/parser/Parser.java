@@ -25,13 +25,14 @@ public class Parser {
     private boolean encounteredError = false;
 
     private int currentTokenPos = -1;
-    private int scopeLevel = 0; // TODO fix bug with scope levels not being right
+    private int scopeLevel = 0;
     private Node parentNode;
-    private final List<Node> lastScopes;
+    private final List<Node> currentScope;
+    private Node lastScope;
 
     public Parser(@NotNull final Logger logger) {
         this.logger = logger;
-        this.lastScopes = new ArrayList<>();
+        this.currentScope = new ArrayList<>();
     }
 
     private void parserError(@NotNull final String message, @NotNull final String... help) {
@@ -112,13 +113,12 @@ public class Parser {
 
         if (parsingScope && NodeType.of(current) == NodeType.RBRACE && scopeLevel >= 1) {
             scopeLevel--;
+            if (!currentScope.isEmpty()) {
+                lastScope = currentScope.get(currentScope.size() - 1);
+                currentScope.remove(currentScope.size() - 1);
+            }
             return true;
         }
-
-        final boolean scopedStatement = switch (n) {
-            case LITERAL_MATCH, LITERAL_FOR, LITERAL_ARMOR, LITERAL_ITEMS, LITERAL_ELYTRAS -> true;
-            default -> false;
-        };
 
         tryAdd(parent, switch (n) {
             case LITERAL_LET       ->  parseLet       (current);
@@ -134,8 +134,6 @@ public class Parser {
                 yield null;
             }
         });
-        if (!parsingScope && !lastScopes.isEmpty() && !scopedStatement)
-            lastScopes.remove(lastScopes.size() - 1);
 
         return false;
     }
@@ -184,7 +182,7 @@ public class Parser {
         scopeLevel++;
 
         final Node scopeStatement = Node.of(scopeType, current);
-        lastScopes.add(scopeStatement);
+        currentScope.add(scopeStatement);
 
         parseScope(scopeStatement, true);
         return scopeStatement;
@@ -204,8 +202,8 @@ public class Parser {
         return parseStatementScope(current, NodeType.MATCH_STATEMENT);
     }
 
-    private boolean checkLastScope(@NotNull final Token current, final int scopeLevel, @NotNull final String scopeTypesStr, @NotNull final NodeType... scopeTypes) {
-        if (scopeLevel < 0 || scopeLevel >= lastScopes.size() || !List.of(scopeTypes).contains(lastScopes.get(scopeLevel).type())) {
+    private boolean checkLastScope(@NotNull final Token current, @NotNull final String scopeTypesStr, @NotNull final NodeType... scopeTypes) {
+        if (lastScope == null || !List.of(scopeTypes).contains(lastScope.type())) {
             unexpectedToken(current);
             logger.log("'" + current.token() + "' can only be used right after a " + scopeTypesStr + " scope ends.", LoggingLevel.HELP);
             return true;
@@ -214,17 +212,16 @@ public class Parser {
     }
 
     private Node parseFor(@NotNull final Token current) {
-        if (checkLastScope(current, scopeLevel, "match", NodeType.MATCH_STATEMENT)) return null;
-        final Node lastScope = lastScopes.get(scopeLevel);
+        if (checkLastScope(current, "match", NodeType.MATCH_STATEMENT)) return null;
         tryAdd(lastScope, parseStatementScope(current, NodeType.FOR_STATEMENT));
         return null;
     }
 
     private Node parseMapAll(@NotNull final Token current) {
-        if (checkLastScope(current, scopeLevel + 2, "predicate identifier list",
+        if (checkLastScope(current, "predicate identifier list",
                 NodeType.ELYTRA_LISTING_PREDICATE, NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE
         )) return null;
-        final Node lastScope = lastScopes.get(scopeLevel + 2);
+
         final NodeType stringListOrPredicateMap = lastScope.children().size() >= 2 ? lastScope.child(1).type() : null;
         if (stringListOrPredicateMap != NodeType.IDENTIFIER_LIST && stringListOrPredicateMap != null) {
             parserError("Expected a predicate identifier list, not a map of predicates and values.", current, "Remove the values (e.g. '= \"something\") from the predicate map.");
