@@ -37,30 +37,25 @@ public class TreeAnalyzer {
     }
 
     private static final Map<NodeType, Collection<NodeType>> validScopeStatements = new HashMap<>() {{
-        this.put(NodeType.LET_STATEMENT, List.of(NodeType.PARENT));
-        this.put(NodeType.MATCH_STATEMENT, List.of(NodeType.PARENT));
-        this.put(NodeType.FOR_STATEMENT, List.of(NodeType.MATCH_STATEMENT));
+        this.put(NodeType.LET_STATEMENT,            List.of(NodeType.PARENT));
+        this.put(NodeType.MATCH_STATEMENT,          List.of(NodeType.PARENT));
+        this.put(NodeType.FOR_STATEMENT,            List.of(NodeType.MATCH_STATEMENT));
 
-        this.put(NodeType.ITEM_LISTING_NOVALUES, List.of(NodeType.FOR_STATEMENT));
-        this.put(NodeType.ITEM_LISTING_PREDICATE, List.of(NodeType.FOR_STATEMENT));
-        this.put(NodeType.ITEM_SETALL_PREDICATE, List.of(NodeType.FOR_STATEMENT));
+        this.put(NodeType.ITEM_LISTING_NOVALUES,    List.of(NodeType.FOR_STATEMENT));
+        this.put(NodeType.ITEM_LISTING_PREDICATE,   List.of(NodeType.FOR_STATEMENT));
+        this.put(NodeType.ITEM_SETALL_PREDICATE,    List.of(NodeType.FOR_STATEMENT));
 
-        this.put(NodeType.ARMOR_LISTING_NOVALUES, List.of(NodeType.FOR_STATEMENT));
-        this.put(NodeType.ARMOR_LISTING_PREDICATE, List.of(NodeType.FOR_STATEMENT));
-        this.put(NodeType.ARMOR_SETALL_PREDICATE, List.of(NodeType.FOR_STATEMENT));
+        this.put(NodeType.ARMOR_LISTING_NOVALUES,   List.of(NodeType.FOR_STATEMENT));
+        this.put(NodeType.ARMOR_LISTING_PREDICATE,  List.of(NodeType.FOR_STATEMENT));
+        this.put(NodeType.ARMOR_SETALL_PREDICATE,   List.of(NodeType.FOR_STATEMENT));
 
-        this.put(NodeType.ELYTRA_LISTING_NOVALUES, List.of(NodeType.FOR_STATEMENT));
+        this.put(NodeType.ELYTRA_LISTING_NOVALUES,  List.of(NodeType.FOR_STATEMENT));
         this.put(NodeType.ELYTRA_LISTING_PREDICATE, List.of(NodeType.FOR_STATEMENT));
-        this.put(NodeType.ELYTRA_SETALL_PREDICATE, List.of(NodeType.FOR_STATEMENT));
+        this.put(NodeType.ELYTRA_SETALL_PREDICATE,  List.of(NodeType.FOR_STATEMENT));
 
-        this.put(NodeType.PREDICATE_STATEMENT, List.of(NodeType.MATCH_STATEMENT, NodeType.ITEM_LISTING_PREDICATE,
-                NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE));
-
-        this.put(NodeType.IDENTIFIER_LIST, List.of(NodeType.ITEM_LISTING_PREDICATE,
-                NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE));
-
-        this.put(NodeType.MAPALL_PREDICATE, List.of(NodeType.ITEM_LISTING_PREDICATE,
-                NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE));
+        this.put(NodeType.PREDICATE_STATEMENT,      List.of(NodeType.MATCH_STATEMENT, NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE));
+        this.put(NodeType.IDENTIFIER_LIST,          List.of(NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE));
+        this.put(NodeType.MAPALL_PREDICATE,         List.of(NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE));
     }};
 
     private boolean analyzeCurrentScope(@NotNull final NodeType scope, @NotNull final Collection<Node> children, final int sub) {
