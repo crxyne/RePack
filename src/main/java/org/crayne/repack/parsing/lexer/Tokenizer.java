@@ -49,7 +49,7 @@ public class Tokenizer {
         this.logger = logger;
     }
 
-    private static final String specials = ",(){}='\"";
+    private static final String specials = ",(){}/+='\"";
     private static final String stringEscapeRegex = splitKeepDelim("\\\\u[\\dA-Fa-f]{4}|\\\\\\d|\\\\[\"\\\\'tnbfr]").substring(1);
 
     public static boolean isSpecialToken(@NotNull final String s) {
@@ -101,7 +101,11 @@ public class Tokenizer {
     }
 
     private void lexerError(@NotNull final String message, @NotNull final Token at, @NotNull final String... help) {
-        logger.traceback(message, at, currentFileContent.get(at.line() - 1), LoggingLevel.LEXING_ERROR, help);
+        lexerError(message, at, false, help);
+    }
+
+    private void lexerError(@NotNull final String message, @NotNull final Token at, final boolean skipToEnd, @NotNull final String... help) {
+        logger.traceback(message, at, currentFileContent.get(at.line() - 1), skipToEnd, LoggingLevel.PARSING_ERROR, help);
         encounteredError = true;
     }
 
@@ -270,13 +274,13 @@ public class Tokenizer {
                 clearCurrent();
                 return true;
             }
-            case "/*" -> {
+            case "/+" -> {
                 multilineCommented = true;
                 clearCurrent();
                 return true;
             }
         }
-        if ((previous + atPos).equals("*/") && multilineCommented) {
+        if ((previous + atPos).equals("+/") && multilineCommented) {
             multilineCommented = false;
             clearCurrent();
             return true;
@@ -340,7 +344,6 @@ public class Tokenizer {
         }
         previous = "" + atPos;
         return true;
-
     }
 
     public List<Token> tokenize(@NotNull final File file, @NotNull final Collection<String> contentCollection, @NotNull final String code) {
@@ -351,7 +354,7 @@ public class Tokenizer {
     public void reset() {
         this.currentFileContent = new ArrayList<>();
         this.column = 0;
-        this.line = -1;
+        this.line = 1;
         this.currentFile = null;
         this.encounteredError = false;
         this.beganString = null;
@@ -388,6 +391,10 @@ public class Tokenizer {
             if (handleQuoted() || handleWhitespaces() || handleSpecialTokens()) continue;
             if (notInComment()) currentToken.append(atPos);
         }
+        handleQuoted();
+        handleWhitespaces();
+        handleSpecialTokens();
+
         reset();
         return result;
     }

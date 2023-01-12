@@ -31,11 +31,12 @@ public class Main {
 
         final boolean success = tree.isPresent() && new TreeAnalyzer(logger).analyze(tree.get(), content);
         if (!success) {
-            logger.error("Could not parse pack.");
+            logger.error("Could not parse pack file '" + f.getAbsolutePath() + "'.");
             return;
         }
+        logger.log(tree.get().toString(), LoggingLevel.INFO);
         final long endTime = System.currentTimeMillis();
-        logger.log("Successfully parsed pack in " + (endTime - startTime) + "ms.", LoggingLevel.SUCCESS);
+        logger.log("Successfully parsed pack file '" + f.getAbsolutePath() + "' in " + (endTime - startTime) + "ms.", LoggingLevel.SUCCESS);
     }
 
 }

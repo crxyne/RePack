@@ -20,6 +20,7 @@ public class Parser {
     private final Logger logger;
     private List<String> currentFileContent;
     private List<Token> tokens;
+    private final Tokenizer tokenizer;
     private boolean encounteredError = false;
 
     private int currentTokenPos = -1;
@@ -31,6 +32,7 @@ public class Parser {
     public Parser(@NotNull final Logger logger) {
         this.logger = logger;
         this.currentScope = new ArrayList<>();
+        this.tokenizer = new Tokenizer(logger);
     }
 
     private void parserError(@NotNull final String message, @NotNull final String... help) {
@@ -39,7 +41,11 @@ public class Parser {
     }
 
     private void parserError(@NotNull final String message, @NotNull final Token at, @NotNull final String... help) {
-        logger.traceback(message, at, currentFileContent.get(at.line() - 1), LoggingLevel.PARSING_ERROR, help);
+        parserError(message, at, false, help);
+    }
+
+    private void parserError(@NotNull final String message, @NotNull final Token at, final boolean skipToEnd, @NotNull final String... help) {
+        logger.traceback(message, at, currentFileContent.get(at.line() - 1), skipToEnd, LoggingLevel.PARSING_ERROR, help);
         encounteredError = true;
     }
 
@@ -49,14 +55,35 @@ public class Parser {
 
     public void parse(@NotNull final File file, @NotNull final String code, @NotNull final Collection<String> content) {
         this.currentFileContent = new ArrayList<>(content);
-        this.tokens = new Tokenizer(logger).tokenize(file, content, code);
+        this.tokens = tokenizer.tokenize(file, content, code);
+
         parse();
     }
 
+    private void checkOpenScopes() {
+        if (scopeLevel <= 0 || currentTokenPos <= 0) return;
+        parserError("Missing scope end '}'", tokens.get(currentTokenPos - 1), true);
+
+        final Node scopeBegin = currentScope.get(scopeLevel - 1);
+        if (scopeBegin.children().isEmpty()) return;
+
+        final Token scopeBeginToken = scopeBegin.child(0).value();
+        if (scopeBeginToken == null) return;
+
+        parserError("An open scope was started here; Close it where it should stop to fix this issue.", scopeBeginToken);
+    }
+
     private void parse() {
+        currentScope.clear();
+        currentTokenPos = -1;
+
         parentNode = Node.of(NodeType.PARENT);
         parseScope(parentNode, false);
-        if (encounteredError) parentNode = null;
+
+        if (!encounteredError) checkOpenScopes();
+
+        if (encounteredError) // cant just be an 'else' because checkOpenScopes can call parserError, which can change encounteredError to true
+            parentNode = null;
     }
 
     private Token currentToken() {
@@ -112,6 +139,7 @@ public class Parser {
 
         tryAdd(parent, switch (n) {
             case LITERAL_LET       ->  parseLet       (current);
+            case LITERAL_GLOBAL    ->  parseGlobal    (current);
             case LITERAL_MATCH     ->  parseMatch     (current);
             case LITERAL_FOR       ->  parseFor       (current);
             case LITERAL_ARMOR     ->  parseArmor     (current);
@@ -137,6 +165,12 @@ public class Parser {
         final Token ident = currentToken();
         nextToken();
         return parsePredicate(NodeType.LET_STATEMENT, ident, current);
+    }
+
+    private Node parseGlobal(@NotNull final Token current) {
+        final Token ident = currentToken();
+        nextToken();
+        return parsePredicate(NodeType.GLOBAL_STATEMENT, ident, current);
     }
 
     private Node parseIdentifier(@NotNull final Token current) {

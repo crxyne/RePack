@@ -14,6 +14,7 @@ public enum NodeType {
     PARENT(null),
     IDENTIFIER(null),
     LET_STATEMENT(null),
+    GLOBAL_STATEMENT(null),
     MATCH_STATEMENT(null),
     FOR_STATEMENT(null),
     IDENTIFIER_LIST(null),
@@ -21,10 +22,6 @@ public enum NodeType {
     ITEM_LISTING_PREDICATE(null),
     ARMOR_LISTING_PREDICATE(null),
     ELYTRA_LISTING_PREDICATE(null),
-
-    ITEM_LISTING_NOVALUES(null),
-    ARMOR_LISTING_NOVALUES(null),
-    ELYTRA_LISTING_NOVALUES(null),
 
     ITEM_SETALL_PREDICATE(null),
     ARMOR_SETALL_PREDICATE(null),
@@ -40,6 +37,7 @@ public enum NodeType {
     LITERAL_MATCH("match"),
     LITERAL_FOR("for"),
     LITERAL_LET("let"),
+    LITERAL_GLOBAL("global"),
     LITERAL_ANY("any"),
 
     LITERAL_ITEMS("items"),
@@ -78,7 +76,8 @@ public enum NodeType {
     public boolean isKeyword() {
         return switch (this) {
             case LITERAL_FOR, LITERAL_MATCH, LITERAL_LET, LITERAL_TEMPLATE,
-                    LITERAL_USE, LITERAL_ANY, LITERAL_ITEMS, LITERAL_ELYTRAS, LITERAL_ARMOR -> true;
+                    LITERAL_USE, LITERAL_ANY, LITERAL_ITEMS, LITERAL_ELYTRAS,
+                    LITERAL_ARMOR, LITERAL_GLOBAL -> true;
             default -> false;
         };
     }

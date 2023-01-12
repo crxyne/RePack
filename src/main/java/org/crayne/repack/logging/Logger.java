@@ -62,19 +62,19 @@ public class Logger {
         Arrays.stream(hints).forEach(h -> log(h, LoggingLevel.HELP));
     }
 
-    public void traceback(@NotNull final String message, @NotNull final Token at, @NotNull final String line, @NotNull final LoggingLevel level, @NotNull final String... hints) {
+    public void traceback(@NotNull final String message, @NotNull final Token at, @NotNull final String line, final boolean skipToEnd, @NotNull final LoggingLevel level, @NotNull final String... hints) {
         if (at.line() == -1 || at.column() == -1) {
             traceback(message, level, hints);
             return;
         }
         log("at line " + at.line() + ", " +
-                        "column " + at.column() +
-                        (at.file() != null ?" in file " + at.file().getAbsolutePath() : "") + ":", level);
+                "column " + at.column() +
+                (at.file() != null ?" in file " + at.file().getAbsolutePath() : ""), level);
         log(message, level);
         Arrays.stream(hints).forEach(h -> log(h, LoggingLevel.HELP));
 
         log(line.replace("\t", " "), LoggingLevel.HELP);
-        log(" ".repeat(Math.max(0, at.column() - 1)) + "^", LoggingLevel.HELP);
+        log(" ".repeat(Math.max(0, skipToEnd ? line.length() : at.column() - 1)) + "^", LoggingLevel.HELP);
     }
 
 
