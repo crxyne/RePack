@@ -8,21 +8,21 @@ import java.util.Collection;
 import java.util.List;
 
 // a map of predicates, mapped to a texture file
-public class PackMapPredicate {
+public class PackMapPredicate implements PackPredicate {
 
     @NotNull
     private final TextureType type;
 
     @NotNull
-    private final List<PackPredicate> predicates;
+    private final List<PackSimplePredicate> predicates;
 
-    public PackMapPredicate(@NotNull final TextureType type, @NotNull final Collection<PackPredicate> predicates) {
+    public PackMapPredicate(@NotNull final TextureType type, @NotNull final Collection<PackSimplePredicate> predicates) {
         this.type = type;
         this.predicates = new ArrayList<>(predicates);
     }
 
     @NotNull
-    public List<PackPredicate> predicates() {
+    public List<PackSimplePredicate> predicates() {
         return predicates;
     }
 

@@ -1,12 +1,17 @@
 package org.crayne.repack.parsing.lexer;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 
+@SuppressWarnings("unused")
 public class Token {
 
+    @NotNull
     private final String token;
+
+    @Nullable
     private final File file;
     private final int line;
     private final int column;
@@ -25,14 +30,17 @@ public class Token {
         this.file = null;
     }
 
+    @NotNull
     public static Token of(@NotNull final String token, final int line, final int column, final File file) {
         return new Token(token, line, column, file);
     }
 
+    @NotNull
     public static Token of(@NotNull final String token) {
         return new Token(token);
     }
 
+    @NotNull
     public String token() {
         return token;
     }
@@ -45,6 +53,7 @@ public class Token {
         return column;
     }
 
+    @Nullable
     public File file() {
         return file;
     }
@@ -54,6 +63,7 @@ public class Token {
     }
 
     @Override
+    @NotNull
     public String toString() {
         return "Token{" +
                 "token='" + token + '\'' +
@@ -61,4 +71,5 @@ public class Token {
                 ", column=" + column +
                 '}';
     }
+
 }

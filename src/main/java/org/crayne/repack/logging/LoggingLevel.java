@@ -21,12 +21,15 @@ public enum LoggingLevel {
     CONVERTING_ERROR (foreground(Color.RED)),
     PACKING_ERROR    (foreground(Color.RED));
 
+
+    @NotNull
     private final AnsiColor color;
 
     LoggingLevel(@NotNull final AnsiColor color) {
         this.color = color;
     }
 
+    @NotNull
     public AnsiColor color() {
         return color;
     }

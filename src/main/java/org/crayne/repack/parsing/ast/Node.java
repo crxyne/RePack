@@ -2,40 +2,41 @@ package org.crayne.repack.parsing.ast;
 
 import org.crayne.repack.parsing.lexer.Token;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class Node {
 
+    @NotNull
     private final List<Node> children;
+
+    @Nullable
     private final Node parent;
-    private NodeType type;
+
+    @NotNull
+    private final NodeType type;
+
+    @Nullable
     private Token value;
 
+    @NotNull
     public static Node of(@NotNull final NodeType type) {
         return new Node(type);
     }
 
-    public static Node of(@NotNull final NodeType type, @NotNull final Node... children) {
-        return new Node(type, children);
-    }
-
+    @NotNull
     public static Node of(@NotNull final NodeType type, @NotNull final Token... children) {
         return new Node(type, Arrays.stream(children).map(Node::of).toList());
     }
 
+    @NotNull
     public static Node of(@NotNull final Token token) {
         return new Node(token);
-    }
-
-    public Node(@NotNull final NodeType type, final Token value) {
-        this.type = type;
-        this.value = value;
-        this.parent = null;
-        children = new ArrayList<>();
     }
 
     public Node(@NotNull final NodeType type) {
@@ -52,28 +53,12 @@ public class Node {
         children = new ArrayList<>();
     }
 
-    public Node(@NotNull final NodeType type, final Token value, @NotNull final Collection<Node> children) {
-        this.type = type;
-        this.value = value;
-        this.parent = null;
-        this.children = new ArrayList<>();
-        this.children.addAll(children);
-    }
-
     public Node(@NotNull final NodeType type, @NotNull final Collection<Node> children) {
         this.type = type;
         this.value = null;
         this.parent = null;
         this.children = new ArrayList<>();
         this.children.addAll(children);
-    }
-
-    public Node(@NotNull final NodeType type, final Token value, @NotNull final Node... children) {
-        this.type = type;
-        this.value = value;
-        this.parent = null;
-        this.children = new ArrayList<>();
-        this.children.addAll(List.of(children));
     }
 
     public Node(@NotNull final NodeType type, @NotNull final Node... children) {
@@ -84,30 +69,7 @@ public class Node {
         this.children.addAll(List.of(children));
     }
 
-    public Node(@NotNull final Node parent, @NotNull final NodeType type, @NotNull final Node... children) {
-        this.type = type;
-        this.value = null;
-        this.parent = parent;
-        this.children = new ArrayList<>();
-        this.children.addAll(List.of(children));
-    }
-
-    public Node(@NotNull final Node parent, @NotNull final NodeType type, @NotNull final Token value, @NotNull final Node... children) {
-        this.type = type;
-        this.value = value;
-        this.parent = parent;
-        this.children = new ArrayList<>();
-        this.children.addAll(List.of(children));
-    }
-
-    public Node(@NotNull final Node parent, @NotNull final NodeType type, @NotNull final Collection<Node> children) {
-        this.type = type;
-        this.value = null;
-        this.parent = parent;
-        this.children = new ArrayList<>();
-        this.children.addAll(children);
-    }
-
+    @Nullable
     public Node parent() {
         return parent;
     }
@@ -120,6 +82,7 @@ public class Node {
         this.children.addAll(List.of(children));
     }
 
+    @NotNull
     public Node child(final int index) {
         return children.get(index);
     }
@@ -128,6 +91,7 @@ public class Node {
         children.set(index, child);
     }
 
+    @Nullable
     public Token value() {
         return value;
     }
@@ -136,17 +100,17 @@ public class Node {
         this.value = token;
     }
 
+    @NotNull
     public NodeType type() {
         return type;
     }
-    public void type(@NotNull final NodeType type) {
-        this.type = type;
-    }
 
+    @NotNull
     public List<Node> children() {
         return children;
     }
 
+    @NotNull
     public String toString() {
         final StringBuilder result = new StringBuilder(type.name());
         if (value != null) {

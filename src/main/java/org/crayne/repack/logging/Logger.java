@@ -9,7 +9,10 @@ import java.util.Arrays;
 
 public class Logger {
 
+    @NotNull
     private final PrintStream out;
+
+    @NotNull
     private final String format;
 
     public Logger() {
