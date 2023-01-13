@@ -1,17 +1,14 @@
 package org.crayne.repack;
 
-import org.crayne.repack.core.PackWorkspace;
-import org.crayne.repack.core.PackWorkspaceBuilder;
+import org.crayne.repack.conversion.MinecraftItem;
 import org.jetbrains.annotations.NotNull;
-
-import java.io.File;
-import java.util.Optional;
 
 public class Main {
 
     public static void main(@NotNull final String... args) {
-        final Optional<PackWorkspace> workspace = new PackWorkspaceBuilder().setup(new File("test-workspace"));
-        workspace.ifPresent(System.out::println);
+        System.out.println(MinecraftItem.allMatching("*_helmet"));
+        //final Optional<PackWorkspace> workspace = new PackWorkspaceBuilder().setup(new File("test-workspace"));
+        //workspace.ifPresent(System.out::println);
     }
 
 }
