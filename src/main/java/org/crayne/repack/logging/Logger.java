@@ -3,11 +3,12 @@ package org.crayne.repack.logging;
 import org.bes.stain.text.AnsiColor;
 import org.crayne.repack.parsing.lexer.Token;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.PrintStream;
 import java.util.Arrays;
 
-public class Logger {
+public class Logger extends PrintStream {
 
     @NotNull
     private final PrintStream out;
@@ -16,18 +17,26 @@ public class Logger {
     private final String format;
 
     public Logger() {
+        super(nullOutputStream());
         out = System.out;
         format = "(%c%%ll%%cr%): %c%%m%%cr%";
     }
 
     public Logger(@NotNull final String format) {
+        super(nullOutputStream());
         out = System.out;
         this.format = format;
     }
 
     public Logger(@NotNull final String format, @NotNull final PrintStream out) {
+        super(nullOutputStream());
         this.out = out;
         this.format = format;
+    }
+
+    public void println(@Nullable final Object x) {
+        if (x == null) return;
+        info(String.valueOf(x));
     }
 
     public void log(@NotNull final String message, @NotNull final LoggingLevel level) {

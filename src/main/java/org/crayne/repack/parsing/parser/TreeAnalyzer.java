@@ -15,7 +15,6 @@ import java.util.Map;
 
 public class TreeAnalyzer {
 
-    private Node AST;
     private final Logger logger;
     private List<String> currentFileContent;
 
@@ -24,9 +23,8 @@ public class TreeAnalyzer {
     }
 
     public boolean analyze(@NotNull final Node AST, @NotNull final List<String> currentFileContent) {
-        this.AST = AST;
         this.currentFileContent = currentFileContent;
-        return analyzeCurrentScope(this.AST.type(), this.AST.children(), 0);
+        return analyzeCurrentScope(AST.type(), AST.children(), 0);
     }
 
     private void analyzerError(@NotNull final String message, @NotNull final String... help) {

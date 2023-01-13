@@ -391,9 +391,9 @@ public class Tokenizer {
             if (handleQuoted() || handleWhitespaces() || handleSpecialTokens()) continue;
             if (notInComment()) currentToken.append(atPos);
         }
-        handleQuoted();
-        handleWhitespaces();
-        handleSpecialTokens();
+        final boolean quoted = handleQuoted();
+        final boolean whitespaces = !quoted && handleWhitespaces();
+        final boolean specials = !whitespaces && !currentToken.toString().equals("\"") && handleSpecialTokens();
 
         reset();
         return result;
