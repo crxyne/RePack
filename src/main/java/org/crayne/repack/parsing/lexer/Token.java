@@ -16,7 +16,7 @@ public class Token {
     private final int line;
     private final int column;
 
-    public Token(@NotNull final String token, final int line, final int column, final File file) {
+    public Token(@NotNull final String token, final int line, final int column, final @Nullable File file) {
         this.token = token;
         this.line = line;
         this.column = column;

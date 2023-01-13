@@ -6,29 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
-public class PackVariable {
+public record PackVariable(@NotNull String name, @NotNull String value) {
 
-
-    @NotNull
-    private final String name;
-
-    @NotNull
-    private final String value;
-
-    public PackVariable(@NotNull final String name, @NotNull final String value) {
-        this.name = name;
-        this.value = value;
-    }
-
-    @NotNull
-    public String name() {
-        return name;
-    }
-
-    @NotNull
-    public String value() {
-        return value;
-    }
 
     @NotNull
     public static Optional<PackVariable> of(@NotNull final Node node) {
