@@ -1,13 +1,20 @@
 package org.crayne.repack.core;
 
+import org.crayne.repack.core.single.PackFile;
 import org.crayne.repack.core.single.PackVariable;
+import org.crayne.repack.core.single.PredicateType;
+import org.crayne.repack.core.single.predicate.PackMapAllPredicate;
+import org.crayne.repack.core.single.predicate.PackSimplePredicate;
+import org.crayne.repack.core.single.predicate.PackSupredicate;
 import org.crayne.repack.logging.Logger;
 import org.crayne.repack.logging.LoggingLevel;
 import org.crayne.repack.parsing.ast.Node;
 import org.crayne.repack.parsing.ast.NodeType;
+import org.crayne.repack.parsing.lexer.Token;
 import org.crayne.repack.parsing.parser.Parser;
 import org.crayne.repack.parsing.parser.TreeAnalyzer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +28,7 @@ public class PackWorkspaceBuilder {
 
     private final Logger logger;
     private final Parser parser;
+    private PackWorkspace workspace;
     private boolean encounteredError;
 
     public PackWorkspaceBuilder() {
@@ -34,36 +42,159 @@ public class PackWorkspaceBuilder {
         encounteredError = true;
     }
 
-    public void setup(@NotNull final File directory) {
+    @NotNull
+    public Optional<PackWorkspace> setup(@NotNull final File directory) {
+        logger.info("Setting up workspace...");
         logger.info("Parsing files...");
+        workspace = new PackWorkspace();
         final Set<Node> trees = parseAllOfDirectory(directory);
         if (encounteredError) {
             workspaceError("Could not open workspace due to previous error; aborting.");
-            return;
+            return Optional.empty();
         }
         if (trees.isEmpty()) {
             logger.info("Nothing was parsed; no operation was performed.");
-            return;
+            return Optional.empty();
         }
-        logger.log("Successfully read all pack files of workspace.", LoggingLevel.SUCCESS);
-        logger.info("Creating global variables...");
-        final Set<PackVariable> variables = createGlobalVariables(trees);
-        logger.info("" + variables);
+        logger.log("Successfully parsed all pack files of workspace.", LoggingLevel.SUCCESS);
+        logger.info("Loading workspace, reading parsed files...");
+        readPackFiles(trees);
+
+
+
+        if (encounteredError) {
+            workspaceError("Could not read parsed files due to previous error.");
+            return Optional.empty();
+        }
+        logger.log("Successfully finished loading all parsed files into workspace.", LoggingLevel.SUCCESS);
+        return Optional.ofNullable(workspace);
     }
 
     @NotNull
-    private Set<PackVariable> createGlobalVariables(@NotNull final Collection<Node> trees) {
-        return trees.stream()
-                .map(Node::children)
-                .map(n -> n.stream()
-                        .filter(n2 -> n2.type() == NodeType.GLOBAL_STATEMENT)
-                        .collect(Collectors.toSet())
-                )
-                .flatMap(Set::stream)
-                .map(PackVariable::of)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toSet());
+    private PackFile readPackFileNode(@NotNull final Node tree) {
+        return readPackFileNode(tree, null);
+    }
+
+    private void defineSimplePredicate(@NotNull final Node statement, @NotNull final PackFile addTo) {
+        final Token ident = statement.child(0).value();
+        final Token value = statement.child(2).value();
+        final Node parent = statement.parent();
+        final NodeType parentType = parent == null ? null : parent.type();
+
+        if (ident == null || value == null || parentType == null) {
+            workspaceError("An unexpected error occurred, invalid AST node encountered for predicate statement");
+            return;
+        }
+        final PredicateType type = switch (parentType) {
+            case ITEM_LISTING_PREDICATE -> PredicateType.ITEMS;
+            case ARMOR_LISTING_PREDICATE -> PredicateType.ARMOR;
+            case ELYTRA_LISTING_PREDICATE -> PredicateType.ELYTRAS;
+            case MATCH_STATEMENT -> PredicateType.MATCH;
+            default -> null;
+        };
+        addTo.definePredicate(new PackSimplePredicate(ident.token(), value.noStringLiterals(), type));
+    }
+
+    private void defineSetAllPredicate(@NotNull final Node statement, @NotNull final PackFile addTo) {
+        final Token value = statement.child(1).value();
+        final NodeType type = statement.type();
+
+        if (value == null) {
+            workspaceError("An unexpected error occurred, invalid AST node encountered for setall-predicate statement");
+            return;
+        }
+        final PredicateType predicateType = switch (type) {
+            case ITEM_SETALL_PREDICATE -> PredicateType.ITEMS;
+            case ARMOR_SETALL_PREDICATE -> PredicateType.ARMOR;
+            case ELYTRA_SETALL_PREDICATE -> PredicateType.ELYTRAS;
+            default -> null;
+        };
+        if (predicateType == null) {
+            workspaceError("An unexpected error occurred, invalid predicate type for setall-predicate statement");
+            return;
+        }
+        addTo.definePredicate(new PackSupredicate(predicateType, value.noStringLiterals()));
+    }
+
+    private void defineMapAllPredicate(@NotNull final Node statement, @NotNull final PackFile addTo) {
+        final Token value = statement.child(0).value();
+        final Node parent = statement.parent();
+        final NodeType parentType = parent == null ? null : parent.type();
+
+        if (value == null || parentType == null) {
+            workspaceError("An unexpected error occurred, invalid AST node encountered for mapall-predicate statement");
+            return;
+        }
+        final PredicateType type = switch (parentType) {
+            case ITEM_LISTING_PREDICATE -> PredicateType.ITEMS;
+            case ARMOR_LISTING_PREDICATE -> PredicateType.ARMOR;
+            case ELYTRA_LISTING_PREDICATE -> PredicateType.ELYTRAS;
+            default -> null;
+        };
+        if (type == null) {
+            workspaceError("An unexpected error occurred, invalid predicate type for mapall-predicate statement");
+            return;
+        }
+        final Node identList = parent.child(1);
+        final NodeType identType = identList.type();
+        if (identType != NodeType.IDENTIFIER_LIST && identType != NodeType.MAPALL_PREDICATE) {
+            workspaceError("An unexpected error occurred, invalid AST node with no identifier list for mapall-predicate statement");
+            return;
+        }
+        final Set<String> keys = identType == NodeType.MAPALL_PREDICATE
+                ? Collections.emptySet()
+                : identList.children()
+                        .stream()
+                        .map(Node::value)
+                        .map(Objects::requireNonNull)
+                        .map(Token::noStringLiterals)
+                        .collect(Collectors.toSet());
+        addTo.definePredicate(new PackMapAllPredicate(type, keys, value.noStringLiterals()));
+    }
+
+    private void variableRedefinedError(@NotNull final String name, @NotNull final Token at) {
+        logger.traceback("The variable '" + name + "' was already defined. Cannot redefine existing variables.", at, LoggingLevel.ANALYZING_ERROR,
+                "Try renaming your old variable, or alternatively, your new variable, to something unique.");
+        encounteredError = true;
+    }
+
+    private void definePackVariable(@NotNull final Node statement, @NotNull final PackFile addTo) {
+        final boolean global = statement.type() == NodeType.GLOBAL_STATEMENT;
+        final Token let = statement.child(0).value();
+        final Optional<PackVariable> variable = PackVariable.of(statement);
+
+        if (let == null || variable.isEmpty()) {
+            workspaceError("An unexpected error occurred, invalid variable definition node");
+            return;
+        }
+        final String name = variable.get().name();
+        if (global) {
+            if (workspace.variableDefined(name)) variableRedefinedError(name, let);
+            workspace.defineVariable(variable.get());
+            return;
+        }
+        if (addTo.variableDefined(name)) variableRedefinedError(name, let);
+        addTo.defineVariable(variable.get());
+    }
+
+    @NotNull
+    private PackFile readPackFileNode(@NotNull final Node tree, @Nullable final PackFile alreadyExisting) {
+        final PackFile addTo = alreadyExisting == null ? new PackFile() : alreadyExisting;
+        tree.children().forEach(statement -> {
+            switch (statement.type()) {
+                case MATCH_STATEMENT, FOR_STATEMENT, ITEM_LISTING_PREDICATE,
+                        ARMOR_LISTING_PREDICATE, ELYTRA_LISTING_PREDICATE -> readPackFileNode(statement, addTo);
+                case PREDICATE_STATEMENT -> defineSimplePredicate(statement, addTo);
+                case ARMOR_SETALL_PREDICATE, ITEM_SETALL_PREDICATE, ELYTRA_SETALL_PREDICATE -> defineSetAllPredicate(statement, addTo);
+                case MAPALL_PREDICATE -> defineMapAllPredicate(statement, addTo);
+                case LET_STATEMENT, GLOBAL_STATEMENT -> definePackVariable(statement, addTo);
+            }
+        });
+        return addTo;
+    }
+
+    private void readPackFiles(@NotNull final Collection<Node> trees) {
+        trees.stream().map(this::readPackFileNode).forEach(workspace.packFiles()::add);
     }
 
     @NotNull

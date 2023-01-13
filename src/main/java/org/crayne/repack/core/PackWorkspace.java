@@ -34,5 +34,21 @@ public class PackWorkspace {
         return globalVariables;
     }
 
+    public void defineVariable(@NotNull final PackVariable variable) {
+        globalVariables.add(variable);
+    }
+
+    public boolean variableDefined(@NotNull final String name) {
+        return globalVariables.stream().anyMatch(v -> v.name().equals(name))
+                || packFiles.stream().anyMatch(p -> p.variableDefined(name));
+    }
+
+    @NotNull
+    public String toString() {
+        return "PackWorkspace{" +
+                "packFiles=" + packFiles +
+                ", globalVariables=" + globalVariables +
+                '}';
+    }
 
 }

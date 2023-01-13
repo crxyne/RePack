@@ -72,4 +72,9 @@ public class Token {
                 '}';
     }
 
+    @NotNull
+    public String noStringLiterals() {
+        return Tokenizer.removeStringLiterals(token());
+    }
+
 }

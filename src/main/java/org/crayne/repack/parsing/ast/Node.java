@@ -16,7 +16,7 @@ public class Node {
     private final List<Node> children;
 
     @Nullable
-    private final Node parent;
+    private Node parent;
 
     @NotNull
     private final NodeType type;
@@ -58,7 +58,7 @@ public class Node {
         this.value = null;
         this.parent = null;
         this.children = new ArrayList<>();
-        this.children.addAll(children);
+        addChildren(children);
     }
 
     public Node(@NotNull final NodeType type, @NotNull final Node... children) {
@@ -66,7 +66,7 @@ public class Node {
         this.value = null;
         this.parent = null;
         this.children = new ArrayList<>();
-        this.children.addAll(List.of(children));
+        addChildren(children);
     }
 
     @Nullable
@@ -74,12 +74,18 @@ public class Node {
         return parent;
     }
 
+    public void parent(@Nullable final Node parent) {
+        this.parent = parent;
+    }
+
     public void addChildren(@NotNull final Collection<Node> children) {
         this.children.addAll(children);
+        children.forEach(c -> c.parent(this));
     }
 
     public void addChildren(@NotNull final Node... children) {
         this.children.addAll(List.of(children));
+        Arrays.stream(children).forEach(c -> c.parent(this));
     }
 
     @NotNull

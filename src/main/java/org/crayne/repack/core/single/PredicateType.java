@@ -1,9 +1,10 @@
 package org.crayne.repack.core.single;
 
-public enum TextureType {
+public enum PredicateType {
 
     ITEMS,
     ARMOR,
-    ELYTRAS
+    ELYTRAS,
+    MATCH
 
 }

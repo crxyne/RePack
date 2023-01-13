@@ -37,7 +37,7 @@ public class PackVariable {
         final Token value = node.child(3).value();
 
         if (ident == null || value == null) return Optional.empty();
-        return Optional.of(new PackVariable(ident.token(), value.token().substring(1, value.token().length() - 1)));
+        return Optional.of(new PackVariable(ident.token(), value.noStringLiterals()));
     }
 
     @NotNull

@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class Logger extends PrintStream {
 
@@ -75,18 +76,21 @@ public class Logger extends PrintStream {
     }
 
     public void traceback(@NotNull final String message, @NotNull final Token at, @NotNull final String line, final boolean skipToEnd, @NotNull final LoggingLevel level, @NotNull final String... hints) {
+        traceback(message, at, level, hints);
+        log(line.replace("\t", " "), LoggingLevel.HELP);
+        log(" ".repeat(Math.max(0, skipToEnd ? line.length() : at.column() - 1)) + "^", LoggingLevel.HELP);
+    }
+
+    public void traceback(@NotNull final String message, @NotNull final Token at, @NotNull final LoggingLevel level, @NotNull final String... hints) {
         if (at.line() == -1 || at.column() == -1) {
             traceback(message, level, hints);
             return;
         }
         log("at line " + at.line() + ", " +
                 "column " + at.column() +
-                (at.file() != null ?" in file " + at.file().getAbsolutePath() : ""), level);
+                (at.file() != null ?" in file " + Objects.requireNonNull(at.file()).getAbsolutePath() : ""), level);
         log(message, level);
         Arrays.stream(hints).forEach(h -> log(h, LoggingLevel.HELP));
-
-        log(line.replace("\t", " "), LoggingLevel.HELP);
-        log(" ".repeat(Math.max(0, skipToEnd ? line.length() : at.column() - 1)) + "^", LoggingLevel.HELP);
     }
 
 
