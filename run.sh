@@ -1,0 +1,1 @@
+java -Xmx2G -Xms2G -jar RePack.jar

@@ -1,9 +1,12 @@
 package org.crayne.repack.conversion;
 
+import org.crayne.repack.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Optional;
 
 @SuppressWarnings("unused")
 public enum MinecraftItem {
@@ -1174,22 +1177,21 @@ public enum MinecraftItem {
         return this == elytra;
     }
 
-    private static boolean matchPattern(@NotNull final String pattern, @NotNull final String str) {
-        if (pattern.length() == 0 && str.length() == 0) return true;
-        if (pattern.length() > 1 && pattern.charAt(0) == '*' && str.length() == 0) return false;
-
-        if ((pattern.length() > 1 && pattern.charAt(0) == '?')
-                || (pattern.length() != 0 && str.length() != 0 && pattern.charAt(0) == str.charAt(0)))
-            return matchPattern(pattern.substring(1), str.substring(1));
-
-        if (pattern.length() > 0 && pattern.charAt(0) == '*')
-            return matchPattern(pattern.substring(1), str) || matchPattern(pattern, str.substring(1));
-        return false;
+    public static Optional<MinecraftItem> of(@NotNull final String name) {
+        try {
+            return Optional.of(MinecraftItem.valueOf(name.toLowerCase()));
+        } catch (final Exception e) {
+            return Optional.empty();
+        }
     }
 
     public static Collection<MinecraftItem> allMatching(@NotNull final String pattern) {
+        if (!pattern.contains("*")) {
+            final Optional<MinecraftItem> singleMatch = of(pattern);
+            return singleMatch.map(Collections::singleton).orElse(Collections.emptySet());
+        }
         return Arrays.stream(MinecraftItem.values())
-                .filter(i -> matchPattern(pattern.toLowerCase(), i.name().toLowerCase()))
+                .filter(i -> StringUtil.matchPattern(pattern.toLowerCase(), i.name().toLowerCase()))
                 .toList();
     }
 

@@ -1,7 +1,7 @@
 package org.crayne.repack.parsing.parser;
 
-import org.crayne.repack.logging.Logger;
-import org.crayne.repack.logging.LoggingLevel;
+import org.crayne.repack.util.logging.Logger;
+import org.crayne.repack.util.logging.LoggingLevel;
 import org.crayne.repack.parsing.ast.Node;
 import org.crayne.repack.parsing.ast.NodeType;
 import org.crayne.repack.parsing.lexer.Token;

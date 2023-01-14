@@ -1,4 +1,4 @@
-package org.crayne.repack.logging;
+package org.crayne.repack.util.logging;
 
 import org.bes.stain.text.AnsiColor;
 import org.jetbrains.annotations.NotNull;

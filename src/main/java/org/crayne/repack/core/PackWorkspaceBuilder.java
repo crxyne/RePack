@@ -6,8 +6,8 @@ import org.crayne.repack.core.single.PredicateType;
 import org.crayne.repack.core.single.predicate.PackMapAllPredicate;
 import org.crayne.repack.core.single.predicate.PackSimplePredicate;
 import org.crayne.repack.core.single.predicate.PackSupredicate;
-import org.crayne.repack.logging.Logger;
-import org.crayne.repack.logging.LoggingLevel;
+import org.crayne.repack.util.logging.Logger;
+import org.crayne.repack.util.logging.LoggingLevel;
 import org.crayne.repack.parsing.ast.Node;
 import org.crayne.repack.parsing.ast.NodeType;
 import org.crayne.repack.parsing.lexer.Token;
@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,8 +62,6 @@ public class PackWorkspaceBuilder {
         logger.info("Loading workspace, reading parsed files...");
         readPackFiles(trees);
 
-
-
         if (encounteredError) {
             workspaceError("Could not read parsed files due to previous error.");
             return Optional.empty();
@@ -92,7 +92,8 @@ public class PackWorkspaceBuilder {
             case MATCH_STATEMENT -> PredicateType.MATCH;
             default -> null;
         };
-        addTo.definePredicate(new PackSimplePredicate(ident.token(), value.noStringLiterals(), type));
+        final String finalValue = replaceVariables(value.noStringLiterals(), value, workspace.globalVariables(), addTo.variables());
+        addTo.definePredicate(new PackSimplePredicate(ident.token(), finalValue, type));
     }
 
     private void defineSetAllPredicate(@NotNull final Node statement, @NotNull final PackFile addTo) {
@@ -113,7 +114,8 @@ public class PackWorkspaceBuilder {
             workspaceError("An unexpected error occurred, invalid predicate type for setall-predicate statement");
             return;
         }
-        addTo.definePredicate(new PackSupredicate(predicateType, value.noStringLiterals()));
+        final String finalValue = replaceVariables(value.noStringLiterals(), value, workspace.globalVariables(), addTo.variables());
+        addTo.definePredicate(new PackSupredicate(predicateType, finalValue));
     }
 
     private void defineMapAllPredicate(@NotNull final Node statement, @NotNull final PackFile addTo) {
@@ -149,7 +151,35 @@ public class PackWorkspaceBuilder {
                         .map(Objects::requireNonNull)
                         .map(Token::noStringLiterals)
                         .collect(Collectors.toSet());
-        addTo.definePredicate(new PackMapAllPredicate(type, keys, value.noStringLiterals()));
+
+        final String finalValue = replaceVariables(value.noStringLiterals(), value, workspace.globalVariables(), addTo.variables());
+        addTo.definePredicate(new PackMapAllPredicate(type, keys, finalValue));
+    }
+
+    @SafeVarargs
+    @NotNull
+    private String replaceVariables(@NotNull final String originalString, @NotNull final Token at, @NotNull final Collection<PackVariable>... variables) {
+        String temp = originalString;
+
+        final Matcher variableMatcher = Pattern.compile(("\\$\\((.*?)\\)")).matcher(originalString);
+        while (variableMatcher.find()) {
+            final String variableName = variableMatcher.group(1);
+            final Optional<PackVariable> variable = Arrays.stream(variables)
+                    .map(s -> s.stream().filter(p -> p.name().equals(variableName)).findAny())
+                    .filter(Optional::isPresent)
+                    .findFirst()
+                    .orElse(Optional.empty());
+
+            if (variable.isEmpty()) {
+                logger.traceback("Variable '" + variableName + "' was not found. Did you spell the name correctly?", at, LoggingLevel.ANALYZING_ERROR,
+                        "Variables are used like so: '$(variablename)'.");
+                encounteredError = true;
+                temp = "";
+                break;
+            }
+            temp = temp.replace("$(" + variableName + ")", variable.get().value());
+        }
+        return temp;
     }
 
     private void variableRedefinedError(@NotNull final String name, @NotNull final Token at) {
@@ -161,20 +191,24 @@ public class PackWorkspaceBuilder {
     private void definePackVariable(@NotNull final Node statement, @NotNull final PackFile addTo) {
         final boolean global = statement.type() == NodeType.GLOBAL_STATEMENT;
         final Token let = statement.child(0).value();
-        final Optional<PackVariable> variable = PackVariable.of(statement);
+        final Token ident = statement.child(1).value();
+        final Token value = statement.child(3).value();
 
-        if (let == null || variable.isEmpty()) {
+        if (ident == null || value == null || let == null) {
             workspaceError("An unexpected error occurred, invalid variable definition node");
             return;
         }
-        final String name = variable.get().name();
+        final String finalValue = replaceVariables(value.noStringLiterals(), value, workspace.globalVariables(), addTo.variables());
+        final PackVariable variable = new PackVariable(ident.token(), finalValue);
+        final String name = variable.name();
+
         if (global) {
             if (workspace.variableDefined(name)) variableRedefinedError(name, let);
-            workspace.defineVariable(variable.get());
+            workspace.defineVariable(variable);
             return;
         }
         if (addTo.variableDefined(name)) variableRedefinedError(name, let);
-        addTo.defineVariable(variable.get());
+        addTo.defineVariable(variable);
     }
 
     @NotNull
