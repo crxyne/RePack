@@ -46,6 +46,24 @@ public class CITPropertyFile {
     }
 
     @NotNull
+    public String textureFileName() {
+        final String path = textureFilePath();
+        return path.contains("/") ? StringUtils.substringAfterLast(path, "/") : path;
+    }
+
+    @NotNull
+    public String textureFileNameNoFiletype() {
+        final String name = textureFileName();
+        return name.contains(".") ? StringUtils.substringBefore(name, ".") : name;
+    }
+
+    @NotNull
+    public String textureFileNameNoPNG() {
+        final String name = textureFileName();
+        return name.toLowerCase().endsWith(".png") ? name.substring(0, name.length() - ".png".length()) : name;
+    }
+
+    @NotNull
     public ItemMatch itemMatch() {
         return itemMatch;
     }
@@ -182,12 +200,12 @@ public class CITPropertyFile {
 
     @NotNull
     private String textureOverrideAsString() {
-        if (itemMatch.matchAll) return "texture=" + itemMatch.texture();
+        if (itemMatch.matchAll) return "texture=" + textureFileNameNoPNG() + "\n";
         final List<String> overrides = itemMatch.items()
                 .stream()
                 .map(s -> {
                     assert itemMatch.type() != null;
-                    return textureNamespacedKey(itemMatch.type(), s, itemMatch.texture());
+                    return textureNamespacedKey(itemMatch.type(), s, textureFileNameNoPNG());
                 })
                 .distinct()
                 .toList();

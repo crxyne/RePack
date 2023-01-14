@@ -1,7 +1,6 @@
 package org.crayne.repack.conversion;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.crayne.repack.conversion.cit.CITPropertyFile;
 import org.crayne.repack.core.PackWorkspaceBuilder;
@@ -103,46 +102,47 @@ public class PackWorkspace {
         final AtomicBoolean success = new AtomicBoolean(true);
         propertiesFiles.forEach(pair -> {
                     final PackFile p = pair.getLeft();
-                    logger.info("   Compiling pack file '" + p.file().getAbsolutePath() + "'...");
+                    logger.info("\tCompiling pack file '" + p.file().getAbsolutePath() + "'...");
                     final int amt = pair.getRight().size();
                     if (amt == 0) {
                         logger.log("Successfully compiled pack file (no operation was performed).", LoggingLevel.SUCCESS);
                         return;
                     }
-                    logger.info("   Creating " + amt + " CIT properties files...");
+                    logger.info("\tCreating " + amt + " CIT properties files...");
 
                     pair.getRight().forEach(property -> {
-                        final File file = new File(cit, StringUtils.substringAfterLast(property.textureFilePath(), "/") + ".properties");
+                        final File file = new File(cit, property.textureFileNameNoFiletype() + ".properties");
                         try {
                             Files.writeString(file.toPath(), property.compile());
                         } catch (final IOException e) {
-                            logger.error("  Could not create output pack file '" + file.getAbsolutePath() + "': " + e.getMessage());
+                            logger.error("\tCould not create output pack file '" + file.getAbsolutePath() + "': " + e.getMessage());
                             e.printStackTrace(logger);
                             success.set(false);
                             return;
                         }
-                        final String destinationPath = property.textureFilePath();
-                        logger.info("   Copying texture (" + destinationPath + ")...");
-                        final File originalTextureFile = new File(p.root(), destinationPath);
+                        final String destinationName = property.textureFileName();
+                        logger.info("\t\tCopying texture (" + destinationName + ")...");
 
-                        final File textureFile = new File(file.getParentFile(),
-                                destinationPath.endsWith(".png")
-                                        ? destinationPath
-                                        : destinationPath + ".png"
+                        final File sourceTextureFile = new File(p.root(), property.textureFilePath());
+                        final File destinationTextureFile = new File(file.getParentFile(),
+                                destinationName.endsWith(".png")
+                                        ? destinationName
+                                        : destinationName + ".png"
                         );
 
                         //noinspection ResultOfMethodCallIgnored
-                        textureFile.getParentFile().mkdirs();
+                        destinationTextureFile.getParentFile().mkdirs();
                         try {
-                            Files.copy(originalTextureFile.toPath(), textureFile.toPath());
+                            Files.copy(sourceTextureFile.toPath(), destinationTextureFile.toPath());
                         } catch (final IOException e) {
-                            logger.error("  Could not copy pack file texture '" + originalTextureFile.getAbsolutePath() + "' to '" + textureFile.getAbsolutePath() + "': " + e.getMessage());
+                            logger.error("\tCould not copy pack file texture '" + sourceTextureFile.getAbsolutePath() + "' to '" + destinationTextureFile.getAbsolutePath() + "': " + e.getMessage());
                             e.printStackTrace(logger);
                             success.set(false);
                         }
                     });
-                    logger.log("Successfully compiled pack file.", LoggingLevel.SUCCESS);
+                    logger.log("\tSuccessfully compiled pack file.", LoggingLevel.SUCCESS);
                 });
+        if (success.get()) logger.log("Successfully compiled workspace to '" + out.getAbsolutePath() + "'.", LoggingLevel.SUCCESS);
         return success.get();
     }
 
