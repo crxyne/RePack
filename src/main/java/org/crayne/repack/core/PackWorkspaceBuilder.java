@@ -98,7 +98,8 @@ public class PackWorkspaceBuilder {
         }
         final Node parentTemp = parent.parent();
 
-        if (parentTemp != null && parentTemp.type() != NodeType.PARENT && parentTemp.type() != NodeType.FOR_STATEMENT) {
+        if (parentTemp != null && parentTemp.type() != NodeType.PARENT && parentTemp.type() != NodeType.FOR_STATEMENT
+                && parentTemp.type() != NodeType.ANY_STATEMENT) {
             workspaceError("An unexpected error occurred, invalid AST node encountered for value statement (" + parentTemp.type() + ")");
             return null;
         }
@@ -265,6 +266,13 @@ public class PackWorkspaceBuilder {
         addTo.definePredicate(matchPredicate);
     }
 
+    private void readAnyStatement(@NotNull final Node statement, @NotNull final PackFile addTo, @NotNull final File root) {
+        final PackAnyPredicate matchPredicate = new PackAnyPredicate();
+
+        readForStatement(statement, addTo, matchPredicate, root);
+        addTo.definePredicate(matchPredicate);
+    }
+
     private void readForStatement(@NotNull final Node forStatement, @NotNull final PackFile addTo, @NotNull final PackMatchPredicate matchPredicate, @NotNull final File root) {
         forStatement.children().forEach(s -> {
             if (encounteredError) return;
@@ -274,7 +282,7 @@ public class PackWorkspaceBuilder {
                 case PREDICATE_STATEMENT -> defineSimplePredicate(s, addTo, matchPredicate, root);
                 case ARMOR_SETALL_PREDICATE, ITEM_SETALL_PREDICATE, ELYTRA_SETALL_PREDICATE -> defineSetAllPredicate(s, addTo, matchPredicate, root);
                 case MAPALL_PREDICATE -> defineMapAllPredicate(s, addTo, matchPredicate, root);
-                case LITERAL_FOR, LITERAL_ARMOR, LITERAL_ELYTRAS, LITERAL_ITEMS, IDENTIFIER_LIST -> {}
+                case LITERAL_FOR, LITERAL_ARMOR, LITERAL_ELYTRAS, LITERAL_ITEMS, LITERAL_ANY, IDENTIFIER_LIST -> {}
                 default -> workspaceError("An unexpected error occurred, invalid match-for node: unexpected sub-node " + s.type().name());
             }
         });
@@ -286,6 +294,7 @@ public class PackWorkspaceBuilder {
         tree.getRight().children().forEach(statement -> {
             switch (statement.type()) {
                 case MATCH_STATEMENT -> readMatchStatement(statement, addTo, root);
+                case ANY_STATEMENT -> readAnyStatement(statement, addTo, root);
                 case LET_STATEMENT, GLOBAL_STATEMENT -> definePackVariable(statement, addTo);
             }
         });

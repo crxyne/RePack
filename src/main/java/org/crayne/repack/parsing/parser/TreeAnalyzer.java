@@ -43,16 +43,17 @@ public class TreeAnalyzer {
         this.put(NodeType.LET_STATEMENT,            List.of(NodeType.PARENT));
         this.put(NodeType.GLOBAL_STATEMENT,         List.of(NodeType.PARENT));
         this.put(NodeType.MATCH_STATEMENT,          List.of(NodeType.PARENT));
+        this.put(NodeType.ANY_STATEMENT,            List.of(NodeType.PARENT));
         this.put(NodeType.FOR_STATEMENT,            List.of(NodeType.MATCH_STATEMENT));
 
-        this.put(NodeType.ITEM_LISTING_PREDICATE,   List.of(NodeType.FOR_STATEMENT));
-        this.put(NodeType.ITEM_SETALL_PREDICATE,    List.of(NodeType.FOR_STATEMENT));
+        this.put(NodeType.ITEM_LISTING_PREDICATE,   List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
+        this.put(NodeType.ITEM_SETALL_PREDICATE,    List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
 
-        this.put(NodeType.ARMOR_LISTING_PREDICATE,  List.of(NodeType.FOR_STATEMENT));
-        this.put(NodeType.ARMOR_SETALL_PREDICATE,   List.of(NodeType.FOR_STATEMENT));
+        this.put(NodeType.ARMOR_LISTING_PREDICATE,  List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
+        this.put(NodeType.ARMOR_SETALL_PREDICATE,   List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
 
-        this.put(NodeType.ELYTRA_LISTING_PREDICATE, List.of(NodeType.FOR_STATEMENT));
-        this.put(NodeType.ELYTRA_SETALL_PREDICATE,  List.of(NodeType.FOR_STATEMENT));
+        this.put(NodeType.ELYTRA_LISTING_PREDICATE, List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
+        this.put(NodeType.ELYTRA_SETALL_PREDICATE,  List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
 
         this.put(NodeType.PREDICATE_STATEMENT,      List.of(NodeType.MATCH_STATEMENT, NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE));
         this.put(NodeType.IDENTIFIER_LIST,          List.of(NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE));
@@ -89,7 +90,7 @@ public class TreeAnalyzer {
             if (validScopeStatements.get(child.type()).contains(scope) || child.children().isEmpty()) {
                 // check nested nodes and ignore first token, which simply is there for file, line and column information
                 final boolean noerror = switch (child.type()) {
-                    case MATCH_STATEMENT, FOR_STATEMENT, ITEM_LISTING_PREDICATE,
+                    case MATCH_STATEMENT, FOR_STATEMENT, ANY_STATEMENT, ITEM_LISTING_PREDICATE,
                             ARMOR_LISTING_PREDICATE, ELYTRA_LISTING_PREDICATE -> analyzeCurrentScope(child.type(), child.children(), 1);
                     default -> true;
                 };

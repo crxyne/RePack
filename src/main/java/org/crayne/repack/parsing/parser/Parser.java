@@ -138,15 +138,16 @@ public class Parser {
         }
 
         tryAdd(parent, switch (n) {
-            case LITERAL_LET       ->  parseLet       (current);
-            case LITERAL_GLOBAL    ->  parseGlobal    (current);
-            case LITERAL_MATCH     ->  parseMatch     (current);
-            case LITERAL_FOR       ->  parseFor       (current);
-            case LITERAL_ARMOR     ->  parseArmor     (current);
-            case LITERAL_ITEMS     ->  parseItems     (current);
-            case LITERAL_ELYTRAS   ->  parseElytras   (current);
-            case IDENTIFIER        ->  parseIdentifier(current);
-            case SET               ->  parseMapAll    (current);
+            case LITERAL_LET      -> parseLet       (current);
+            case LITERAL_GLOBAL   -> parseGlobal    (current);
+            case LITERAL_MATCH    -> parseMatch     (current);
+            case LITERAL_ANY      -> parseAny       (current);
+            case LITERAL_FOR      -> parseFor       (current);
+            case LITERAL_ARMOR    -> parseArmor     (current);
+            case LITERAL_ITEMS    -> parseItems     (current);
+            case LITERAL_ELYTRAS  -> parseElytras   (current);
+            case IDENTIFIER       -> parseIdentifier(current);
+            case SET              -> parseMapAll    (current);
             default -> {
                 unexpectedToken(current);
                 yield null;
@@ -224,6 +225,10 @@ public class Parser {
 
     private Node parseMatch(@NotNull final Token current) {
         return parseStatementScope(current, NodeType.MATCH_STATEMENT);
+    }
+
+    private Node parseAny(@NotNull final Token current) {
+        return parseStatementScope(current, NodeType.ANY_STATEMENT);
     }
 
     private boolean checkLastScope(@NotNull final Token current, @NotNull final String scopeTypesStr, @NotNull final NodeType... scopeTypes) {

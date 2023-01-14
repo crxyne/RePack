@@ -17,6 +17,7 @@ public enum NodeType {
     GLOBAL_STATEMENT(null),
     MATCH_STATEMENT(null),
     FOR_STATEMENT(null),
+    ANY_STATEMENT(null),
     IDENTIFIER_LIST(null),
 
     ITEM_LISTING_PREDICATE(null),
