@@ -17,11 +17,3 @@ match {
         *_boots
     } = "$(filename)"
 }
-
-match {
-
-} for {
-    items {
-        *shulk* = "$(filename)"
-    }
-}
