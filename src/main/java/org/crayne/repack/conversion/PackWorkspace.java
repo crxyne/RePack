@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -111,7 +112,12 @@ public class PackWorkspace {
                     logger.info("\tCreating " + amt + " CIT properties files...");
 
                     pair.getRight().forEach(property -> {
-                        final File file = new File(cit, property.textureFileNameNoFiletype() + ".properties");
+                        File file;
+                        int copyNumber = 0;
+                        do {
+                            file = new File(cit, property.textureFileNameNoFiletype() + (copyNumber == 0 ? "" : String.valueOf(copyNumber)) + ".properties");
+                            copyNumber++;
+                        } while (file.exists());
                         try {
                             Files.writeString(file.toPath(), property.compile());
                         } catch (final IOException e) {
@@ -133,7 +139,7 @@ public class PackWorkspace {
                         //noinspection ResultOfMethodCallIgnored
                         destinationTextureFile.getParentFile().mkdirs();
                         try {
-                            Files.copy(sourceTextureFile.toPath(), destinationTextureFile.toPath());
+                            Files.copy(sourceTextureFile.toPath(), destinationTextureFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                         } catch (final IOException e) {
                             logger.error("\tCould not copy pack file texture '" + sourceTextureFile.getAbsolutePath() + "' to '" + destinationTextureFile.getAbsolutePath() + "': " + e.getMessage());
                             e.printStackTrace(logger);
