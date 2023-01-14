@@ -242,13 +242,13 @@ public class Parser {
     }
 
     private Node parseMapAll(@NotNull final Token current) {
-        if (checkLastScope(current, "predicate identifier list",
+        if (checkLastScope(current, "value identifier list",
                 NodeType.ELYTRA_LISTING_PREDICATE, NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE
         )) return null;
 
         final NodeType stringListOrPredicateMap = lastScope.children().size() >= 2 ? lastScope.child(1).type() : null;
         if (stringListOrPredicateMap != NodeType.IDENTIFIER_LIST && stringListOrPredicateMap != null) {
-            parserError("Expected a predicate identifier list, not a map of predicates and values.", current, "Remove the values (e.g. '= \"something\") from the predicate map.");
+            parserError("Expected a value identifier list, not a map of predicates and values.", current, "Remove the values (e.g. '= \"something\") from the value map.");
             return null;
         }
 

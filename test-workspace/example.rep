@@ -10,5 +10,10 @@ match {
         *_leggings   = "$(filename)_leggings"
         *_boots      = "$(filename)_boots"
     }
-    armor = "$(filename)_model"
+    armor {
+        *_helmet
+        *_chestplate
+        *_leggings
+        *_boots
+    } = "$(filename)_model"
 }

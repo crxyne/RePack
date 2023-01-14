@@ -5,23 +5,24 @@ import org.crayne.repack.parsing.lexer.Token;
 import org.crayne.repack.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
-public class PackMatchPredicate extends PackSimplePredicate {
+public class PackMatchPredicate implements PackPredicate {
 
     @NotNull
     private final Set<PackPredicate> predicates;
 
-    public PackMatchPredicate(@NotNull final Token key, @NotNull final String predicate) {
-        super(key, predicate, PredicateType.MATCH);
+    @NotNull
+    private final List<PackSimplePredicate> matchPredicates;
+
+    public PackMatchPredicate(@NotNull final Collection<PackSimplePredicate> matchPredicates) {
         this.predicates = new HashSet<>();
+        this.matchPredicates = new ArrayList<>(matchPredicates);
     }
 
-    public PackMatchPredicate(@NotNull final Token key, @NotNull final String predicate, @NotNull final Collection<PackPredicate> predicates) {
-        super(key, predicate, PredicateType.MATCH);
+    public PackMatchPredicate(@NotNull final Collection<PackSimplePredicate> matchPredicates, @NotNull final Collection<PackPredicate> predicates) {
         this.predicates = new HashSet<>(predicates);
+        this.matchPredicates = new ArrayList<>(matchPredicates);
     }
 
     @NotNull
@@ -30,8 +31,13 @@ public class PackMatchPredicate extends PackSimplePredicate {
     }
 
     @NotNull
-    public String predicate() {
-        return super.predicate();
+    public List<PackSimplePredicate> matchPredicates() {
+        return matchPredicates;
+    }
+
+    @NotNull
+    public String value() {
+        throw new RuntimeException("Match predicates cannot have one single value");
     }
 
     @NotNull
@@ -40,13 +46,15 @@ public class PackMatchPredicate extends PackSimplePredicate {
     }
 
     @NotNull
+    public List<Token> keys() {
+        return predicates.stream().map(PackPredicate::keys).flatMap(Collection::stream).toList();
+    }
+
+    @NotNull
     public String toString() {
         return "PackMatchPredicate {\n" +
-                ("key = '" + key.token() + '\'' +
-                ", predicate = '" + predicate + '\'' +
-                ", type = " + type +
-                ", \n" +
-                "predicates = " + StringUtil.stringOf(predicates)).indent(3) +
+                ("match = " + StringUtil.stringOf(matchPredicates) +
+                ", predicates = " + StringUtil.stringOf(predicates)).indent(3) +
                 "}";
     }
 

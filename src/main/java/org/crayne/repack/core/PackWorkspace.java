@@ -3,6 +3,7 @@ package org.crayne.repack.core;
 import org.crayne.repack.core.single.PackFile;
 import org.crayne.repack.core.single.PackVariable;
 import org.crayne.repack.util.StringUtil;
+import org.crayne.repack.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -15,14 +16,24 @@ public class PackWorkspace {
     @NotNull
     private final List<PackVariable> globalVariables;
 
-    public PackWorkspace() {
+    @NotNull
+    private final Logger logger;
+
+    public PackWorkspace(@NotNull final Logger logger) {
+        this.logger = logger;
         this.packFiles = new HashSet<>();
         this.globalVariables = new ArrayList<>();
     }
 
-    public PackWorkspace(@NotNull final Collection<PackFile> packFiles, @NotNull final Collection<PackVariable> globalVariables) {
+    public PackWorkspace(@NotNull final Logger logger, @NotNull final Collection<PackFile> packFiles, @NotNull final Collection<PackVariable> globalVariables) {
+        this.logger = logger;
         this.packFiles = new HashSet<>(packFiles);
         this.globalVariables = new ArrayList<>(globalVariables);
+    }
+
+    @NotNull
+    public Logger logger() {
+        return logger;
     }
 
     @NotNull

@@ -19,17 +19,17 @@ public class PackMapAllPredicate implements PackPredicate {
     private final List<Token> keys;
 
     @NotNull
-    private final String predicate;
+    private final String value;
 
-    public PackMapAllPredicate(@NotNull final PredicateType type, @NotNull final Collection<Token> keys, @NotNull final String predicate) {
+    public PackMapAllPredicate(@NotNull final PredicateType type, @NotNull final Collection<Token> keys, @NotNull final String value) {
         this.type = type;
         this.keys = new ArrayList<>(keys);
-        this.predicate = predicate;
+        this.value = value;
     }
 
     @NotNull
-    public String predicate() {
-        return predicate;
+    public String value() {
+        return value;
     }
 
     @NotNull
@@ -47,7 +47,7 @@ public class PackMapAllPredicate implements PackPredicate {
         return "PackMapAllPredicate {" +
                 "type = " + type +
                 ", keys = " + StringUtil.stringOf(keys.stream().map(Token::token).toList()) +
-                ", predicate = '" + predicate + '\'' +
+                ", value = '" + value + '\'' +
                 '}';
     }
 }

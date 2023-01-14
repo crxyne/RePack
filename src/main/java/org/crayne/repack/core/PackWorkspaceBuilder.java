@@ -46,7 +46,7 @@ public class PackWorkspaceBuilder {
     public Optional<PackWorkspace> setup(@NotNull final File directory) {
         logger.info("Setting up workspace...");
         logger.info("Parsing files...");
-        workspace = new PackWorkspace();
+        workspace = new PackWorkspace(logger);
         final Set<Node> trees = parseAllOfDirectory(directory);
         if (encounteredError) {
             workspaceError("Could not open workspace due to previous error; aborting.");
@@ -74,7 +74,7 @@ public class PackWorkspaceBuilder {
     }
 
     @Nullable
-    private PackPredicate defineSimplePredicate(@NotNull final Node statement, @NotNull final PackFile addTo, @Nullable final PackMatchPredicate matchPredicate) {
+    private PackSimplePredicate defineSimplePredicate(@NotNull final Node statement, @NotNull final PackFile addTo, @Nullable final PackMatchPredicate matchPredicate) {
         final Token ident = statement.child(0).value();
         final Token value = statement.child(2).value();
 
@@ -82,13 +82,13 @@ public class PackWorkspaceBuilder {
         final NodeType parentType = parent == null ? null : parent.type();
 
         if (ident == null || value == null || parentType == null) {
-            workspaceError("An unexpected error occurred, invalid AST node encountered for predicate statement");
+            workspaceError("An unexpected error occurred, invalid AST node encountered for value statement");
             return null;
         }
         final Node parentTemp = parent.parent();
 
         if (parentTemp != null && parentTemp.type() != NodeType.PARENT && parentTemp.type() != NodeType.FOR_STATEMENT) {
-            workspaceError("An unexpected error occurred, invalid AST node encountered for predicate statement (" + parentTemp.type() + ")");
+            workspaceError("An unexpected error occurred, invalid AST node encountered for value statement (" + parentTemp.type() + ")");
             return null;
         }
 
@@ -100,9 +100,11 @@ public class PackWorkspaceBuilder {
             default -> null;
         };
         final String finalValue = replaceVariables(value.noStringLiterals(), value, workspace.globalVariables(), addTo.variables());
-        final PackPredicate predicate = type == PredicateType.MATCH ? new PackMatchPredicate(ident, finalValue) : new PackSimplePredicate(ident, finalValue, type);
+        final PackSimplePredicate predicate = new PackSimplePredicate(ident, finalValue, type);
 
-        if (matchPredicate == null) addTo.definePredicate(predicate);
+        if (matchPredicate == null) return predicate;
+
+        if (type == PredicateType.MATCH) matchPredicate.matchPredicates().add(predicate);
         else matchPredicate.predicates().add(predicate);
 
         return predicate;
@@ -113,7 +115,7 @@ public class PackWorkspaceBuilder {
         final NodeType type = statement.type();
 
         if (value == null) {
-            workspaceError("An unexpected error occurred, invalid AST node encountered for setall-predicate statement");
+            workspaceError("An unexpected error occurred, invalid AST node encountered for setall-value statement");
             return;
         }
         final PredicateType predicateType = switch (type) {
@@ -123,7 +125,7 @@ public class PackWorkspaceBuilder {
             default -> null;
         };
         if (predicateType == null) {
-            workspaceError("An unexpected error occurred, invalid predicate type for setall-predicate statement");
+            workspaceError("An unexpected error occurred, invalid value type for setall-value statement");
             return;
         }
         final String finalValue = replaceVariables(value.noStringLiterals(), value, workspace.globalVariables(), addTo.variables());
@@ -139,7 +141,7 @@ public class PackWorkspaceBuilder {
         final NodeType parentType = parent == null ? null : parent.type();
 
         if (value == null || parentType == null) {
-            workspaceError("An unexpected error occurred, invalid AST node encountered for mapall-predicate statement");
+            workspaceError("An unexpected error occurred, invalid AST node encountered for mapall-value statement");
             return;
         }
         final PredicateType type = switch (parentType) {
@@ -149,13 +151,13 @@ public class PackWorkspaceBuilder {
             default -> null;
         };
         if (type == null) {
-            workspaceError("An unexpected error occurred, invalid predicate type for mapall-predicate statement");
+            workspaceError("An unexpected error occurred, invalid value type for mapall-value statement");
             return;
         }
         final Node identList = parent.child(1);
         final NodeType identType = identList.type();
         if (identType != NodeType.IDENTIFIER_LIST && identType != NodeType.MAPALL_PREDICATE) {
-            workspaceError("An unexpected error occurred, invalid AST node with no identifier list for mapall-predicate statement");
+            workspaceError("An unexpected error occurred, invalid AST node with no identifier list for mapall-value statement");
             return;
         }
         final Set<Token> keys = identType == NodeType.MAPALL_PREDICATE
@@ -229,13 +231,22 @@ public class PackWorkspaceBuilder {
     }
 
     private void readMatchStatement(@NotNull final Node statement, @NotNull final PackFile addTo) {
-        final PackPredicate predicate = defineSimplePredicate(statement.child(1), addTo, null);
-        if (!(predicate instanceof final PackMatchPredicate matchPredicate)) {
-            workspaceError("An unexpected error occurred, invalid match node");
+        final List<PackSimplePredicate> matchPredicates = statement.children()
+                .stream()
+                .filter(n -> n.type() == NodeType.PREDICATE_STATEMENT)
+                .map(p -> defineSimplePredicate(p, addTo, null))
+                .map(Objects::requireNonNull)
+                .toList();
+
+        final PackMatchPredicate matchPredicate = new PackMatchPredicate(matchPredicates);
+        final Optional<Node> forStatement = statement.children().stream().filter(n -> n.type() == NodeType.FOR_STATEMENT).findFirst();
+
+        if (forStatement.isEmpty()) {
+            workspaceError("An unexpected error occurred, match scope does not have corresponding for scope after it");
             return;
         }
-        final Node forStatement = statement.child(2);
-        readForStatement(forStatement, addTo, matchPredicate);
+        readForStatement(forStatement.get(), addTo, matchPredicate);
+        addTo.definePredicate(matchPredicate);
     }
 
     private void readForStatement(@NotNull final Node forStatement, @NotNull final PackFile addTo, @NotNull final PackMatchPredicate matchPredicate) {
@@ -247,7 +258,7 @@ public class PackWorkspaceBuilder {
                 case PREDICATE_STATEMENT -> defineSimplePredicate(s, addTo, matchPredicate);
                 case ARMOR_SETALL_PREDICATE, ITEM_SETALL_PREDICATE, ELYTRA_SETALL_PREDICATE -> defineSetAllPredicate(s, addTo, matchPredicate);
                 case MAPALL_PREDICATE -> defineMapAllPredicate(s, addTo, matchPredicate);
-                case LITERAL_FOR, LITERAL_ARMOR, LITERAL_ELYTRAS, LITERAL_ITEMS -> {}
+                case LITERAL_FOR, LITERAL_ARMOR, LITERAL_ELYTRAS, LITERAL_ITEMS, IDENTIFIER_LIST -> {}
                 default -> workspaceError("An unexpected error occurred, invalid match-for node: unexpected sub-node " + s.type().name());
             }
         });

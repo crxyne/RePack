@@ -3,13 +3,10 @@ package org.crayne.repack.conversion;
 import org.crayne.repack.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
+import java.util.*;
 
 @SuppressWarnings("unused")
-public enum MinecraftItem {
+public enum VanillaItem {
 
     stone,
     granite,
@@ -1177,21 +1174,27 @@ public enum MinecraftItem {
         return this == elytra;
     }
 
-    public static Optional<MinecraftItem> of(@NotNull final String name) {
+    public static Optional<VanillaItem> of(@NotNull final String name) {
         try {
-            return Optional.of(MinecraftItem.valueOf(name.toLowerCase()));
+            return Optional.of(VanillaItem.valueOf(name.toLowerCase()));
         } catch (final Exception e) {
             return Optional.empty();
         }
     }
 
-    public static Collection<MinecraftItem> allMatching(@NotNull final String pattern) {
-        if (!pattern.contains("*")) {
-            final Optional<MinecraftItem> singleMatch = of(pattern);
-            return singleMatch.map(Collections::singleton).orElse(Collections.emptySet());
+    public static boolean moddedItem(@NotNull final String namespacedKey) {
+        return !namespacedKey.startsWith("minecraft:") && namespacedKey.contains(":");
+    }
+
+    public static List<VanillaItem> allMatching(@NotNull final String pattern) {
+        final String actual = pattern.startsWith("minecraft:") ? pattern.substring("minecraft:".length()) : pattern;
+
+        if (!actual.contains("*")) {
+            final Optional<VanillaItem> singleMatch = of(actual);
+            return singleMatch.map(Collections::singletonList).orElse(Collections.emptyList());
         }
-        return Arrays.stream(MinecraftItem.values())
-                .filter(i -> StringUtil.matchPattern(pattern.toLowerCase(), i.name().toLowerCase()))
+        return Arrays.stream(VanillaItem.values())
+                .filter(i -> StringUtil.matchPattern(actual.toLowerCase(), i.name().toLowerCase()))
                 .toList();
     }
 
