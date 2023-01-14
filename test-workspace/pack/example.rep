@@ -1,4 +1,4 @@
-let filename = "black_maid"
+let filename = "textures/black_maid"
 let name = "black maid"
 
 match {
@@ -15,5 +15,5 @@ match {
         *_chestplate
         *_leggings
         *_boots
-    } = "$(filename)_model"
+    } = "$(filename)"
 }

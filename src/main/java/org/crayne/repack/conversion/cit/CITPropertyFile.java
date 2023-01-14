@@ -2,7 +2,8 @@ package org.crayne.repack.conversion.cit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.crayne.repack.conversion.VanillaItem;
+import org.crayne.repack.conversion.util.VanillaItem;
+import org.crayne.repack.conversion.util.TextureType;
 import org.crayne.repack.core.single.predicate.PackMatchPredicate;
 import org.crayne.repack.core.single.predicate.PackPredicate;
 import org.crayne.repack.core.single.predicate.PackSimplePredicate;
@@ -13,6 +14,7 @@ import org.crayne.repack.util.logging.LoggingLevel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -40,7 +42,7 @@ public class CITPropertyFile {
 
     @NotNull
     public String textureFilePath() {
-        return textureFilePath;
+        return textureFilePath.endsWith(".png") ? textureFilePath : textureFilePath + ".png";
     }
 
     @NotNull
@@ -150,7 +152,7 @@ public class CITPropertyFile {
     }
 
     @NotNull
-    public static Set<CITPropertyFile> of(@NotNull final PackMatchPredicate matchPredicate, @NotNull final Logger logger) {
+    public static Set<CITPropertyFile> of(@NotNull final PackMatchPredicate matchPredicate, @NotNull final Logger logger, @NotNull final File out) {
         final Map<String, Set<PackPredicate>> textureFileMap = textureFileMap(matchPredicate);
         final Map<TextureType, List<ItemMatch>> itemMatches = findMatches(textureFileMap, matchPredicate, logger);
 
@@ -208,15 +210,21 @@ public class CITPropertyFile {
     }
 
     @NotNull
+    private String textureTypeAsString() {
+        return "type=" + type + "\n";
+    }
+
+    @NotNull
+    public String compile() {
+        return textureTypeAsString()
+                + itemMatchAsString()
+                + textureOverrideAsString()
+                + nbtMatchAsString();
+    }
+
+    @NotNull
     public String toString() {
-        return "CITPropertyFile {\n" +
-                (
-                        "type=" + type + "\n"
-                        + itemMatchAsString()
-                        + textureOverrideAsString()
-                        + nbtMatchAsString()
-                ).indent(3)
-                + "}";
+        return "CITPropertyFile {\n" + compile().indent(3) + "}";
     }
 
 }

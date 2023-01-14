@@ -1,4 +1,4 @@
-package org.crayne.repack.conversion.cit;
+package org.crayne.repack.conversion.util;
 
 import org.crayne.repack.core.single.PredicateType;
 import org.jetbrains.annotations.NotNull;

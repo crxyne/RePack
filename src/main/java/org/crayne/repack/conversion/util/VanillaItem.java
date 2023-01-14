@@ -1,4 +1,4 @@
-package org.crayne.repack.conversion;
+package org.crayne.repack.conversion.util;
 
 import org.crayne.repack.util.StringUtil;
 import org.jetbrains.annotations.NotNull;

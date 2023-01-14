@@ -1,5 +1,7 @@
 package org.crayne.repack.core;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.crayne.repack.conversion.PackWorkspace;
 import org.crayne.repack.core.single.PackFile;
 import org.crayne.repack.core.single.PackVariable;
 import org.crayne.repack.core.single.PredicateType;
@@ -47,7 +49,7 @@ public class PackWorkspaceBuilder {
         logger.info("Setting up workspace...");
         logger.info("Parsing files...");
         workspace = new PackWorkspace(logger);
-        final Set<Node> trees = parseAllOfDirectory(directory);
+        final Set<Pair<File, Node>> trees = parseAllOfDirectory(directory);
         if (encounteredError) {
             workspaceError("Could not open workspace due to previous error; aborting.");
             return Optional.empty();
@@ -58,7 +60,7 @@ public class PackWorkspaceBuilder {
         }
         logger.log("Successfully parsed all pack files of workspace.", LoggingLevel.SUCCESS);
         logger.info("Loading workspace, reading parsed files...");
-        readPackFiles(trees);
+        readPackFiles(trees, directory);
 
         if (encounteredError) {
             workspaceError("Could not read parsed files due to previous error.");
@@ -69,12 +71,21 @@ public class PackWorkspaceBuilder {
     }
 
     @NotNull
-    private PackFile readPackFileNode(@NotNull final Node tree) {
-        return readPackFileNode(tree, null);
+    private PackFile readPackFileNode(@NotNull final Pair<File, Node> tree, @NotNull final File root) {
+        return readPackFileNode(tree, null, root);
+    }
+
+    private boolean checkTextureExists(@NotNull final File root, @NotNull final String child, @NotNull final Token at) {
+        if (!new File(root, child).isFile() && !new File(root, child + ".png").isFile()) {
+            logger.traceback("Could not find texture file '" + child + "' in '" + root.getAbsolutePath() + "'.", at, LoggingLevel.ANALYZING_ERROR, "Did you spell the filename correctly?");
+            encounteredError = true;
+            return true;
+        }
+        return false;
     }
 
     @Nullable
-    private PackSimplePredicate defineSimplePredicate(@NotNull final Node statement, @NotNull final PackFile addTo, @Nullable final PackMatchPredicate matchPredicate) {
+    private PackSimplePredicate defineSimplePredicate(@NotNull final Node statement, @NotNull final PackFile addTo, @Nullable final PackMatchPredicate matchPredicate, @NotNull final File root) {
         final Token ident = statement.child(0).value();
         final Token value = statement.child(2).value();
 
@@ -100,8 +111,9 @@ public class PackWorkspaceBuilder {
             default -> null;
         };
         final String finalValue = replaceVariables(value.noStringLiterals(), value, workspace.globalVariables(), addTo.variables());
-        final PackSimplePredicate predicate = new PackSimplePredicate(ident, finalValue, type);
+        if (type != PredicateType.MATCH && checkTextureExists(root, finalValue, value)) return null;
 
+        final PackSimplePredicate predicate = new PackSimplePredicate(ident, finalValue, type);
         if (matchPredicate == null) return predicate;
 
         if (type == PredicateType.MATCH) matchPredicate.matchPredicates().add(predicate);
@@ -110,7 +122,7 @@ public class PackWorkspaceBuilder {
         return predicate;
     }
 
-    private void defineSetAllPredicate(@NotNull final Node statement, @NotNull final PackFile addTo, @Nullable final PackMatchPredicate matchPredicate) {
+    private void defineSetAllPredicate(@NotNull final Node statement, @NotNull final PackFile addTo, @Nullable final PackMatchPredicate matchPredicate, @NotNull final File root) {
         final Token value = statement.child(1).value();
         final NodeType type = statement.type();
 
@@ -129,13 +141,15 @@ public class PackWorkspaceBuilder {
             return;
         }
         final String finalValue = replaceVariables(value.noStringLiterals(), value, workspace.globalVariables(), addTo.variables());
+        if (checkTextureExists(root, finalValue, value)) return;
+
         final PackPredicate predicate = new PackSupredicate(predicateType, finalValue);
 
         if (matchPredicate == null) addTo.definePredicate(predicate);
         else matchPredicate.predicates().add(predicate);
     }
 
-    private void defineMapAllPredicate(@NotNull final Node statement, @NotNull final PackFile addTo, @Nullable final PackMatchPredicate matchPredicate) {
+    private void defineMapAllPredicate(@NotNull final Node statement, @NotNull final PackFile addTo, @Nullable final PackMatchPredicate matchPredicate, @NotNull final File root) {
         final Token value = statement.child(0).value();
         final Node parent = statement.parent();
         final NodeType parentType = parent == null ? null : parent.type();
@@ -169,6 +183,8 @@ public class PackWorkspaceBuilder {
                         .collect(Collectors.toSet());
 
         final String finalValue = replaceVariables(value.noStringLiterals(), value, workspace.globalVariables(), addTo.variables());
+        if (checkTextureExists(root, finalValue, value)) return;
+
         final PackPredicate predicate = new PackMapAllPredicate(type, keys, finalValue);
 
         if (matchPredicate == null) addTo.definePredicate(predicate);
@@ -230,12 +246,12 @@ public class PackWorkspaceBuilder {
         addTo.defineVariable(variable);
     }
 
-    private void readMatchStatement(@NotNull final Node statement, @NotNull final PackFile addTo) {
+    private void readMatchStatement(@NotNull final Node statement, @NotNull final PackFile addTo, @NotNull final File root) {
         final List<PackSimplePredicate> matchPredicates = statement.children()
                 .stream()
                 .filter(n -> n.type() == NodeType.PREDICATE_STATEMENT)
-                .map(p -> defineSimplePredicate(p, addTo, null))
-                .map(Objects::requireNonNull)
+                .map(p -> defineSimplePredicate(p, addTo, null, root))
+                .filter(Objects::nonNull)
                 .toList();
 
         final PackMatchPredicate matchPredicate = new PackMatchPredicate(matchPredicates);
@@ -245,19 +261,19 @@ public class PackWorkspaceBuilder {
             workspaceError("An unexpected error occurred, match scope does not have corresponding for scope after it");
             return;
         }
-        readForStatement(forStatement.get(), addTo, matchPredicate);
+        readForStatement(forStatement.get(), addTo, matchPredicate, root);
         addTo.definePredicate(matchPredicate);
     }
 
-    private void readForStatement(@NotNull final Node forStatement, @NotNull final PackFile addTo, @NotNull final PackMatchPredicate matchPredicate) {
+    private void readForStatement(@NotNull final Node forStatement, @NotNull final PackFile addTo, @NotNull final PackMatchPredicate matchPredicate, @NotNull final File root) {
         forStatement.children().forEach(s -> {
             if (encounteredError) return;
             switch (s.type()) {
                 case ITEM_LISTING_PREDICATE,
-                        ARMOR_LISTING_PREDICATE, ELYTRA_LISTING_PREDICATE -> readForStatement(s, addTo, matchPredicate);
-                case PREDICATE_STATEMENT -> defineSimplePredicate(s, addTo, matchPredicate);
-                case ARMOR_SETALL_PREDICATE, ITEM_SETALL_PREDICATE, ELYTRA_SETALL_PREDICATE -> defineSetAllPredicate(s, addTo, matchPredicate);
-                case MAPALL_PREDICATE -> defineMapAllPredicate(s, addTo, matchPredicate);
+                        ARMOR_LISTING_PREDICATE, ELYTRA_LISTING_PREDICATE -> readForStatement(s, addTo, matchPredicate, root);
+                case PREDICATE_STATEMENT -> defineSimplePredicate(s, addTo, matchPredicate, root);
+                case ARMOR_SETALL_PREDICATE, ITEM_SETALL_PREDICATE, ELYTRA_SETALL_PREDICATE -> defineSetAllPredicate(s, addTo, matchPredicate, root);
+                case MAPALL_PREDICATE -> defineMapAllPredicate(s, addTo, matchPredicate, root);
                 case LITERAL_FOR, LITERAL_ARMOR, LITERAL_ELYTRAS, LITERAL_ITEMS, IDENTIFIER_LIST -> {}
                 default -> workspaceError("An unexpected error occurred, invalid match-for node: unexpected sub-node " + s.type().name());
             }
@@ -265,31 +281,36 @@ public class PackWorkspaceBuilder {
     }
 
     @NotNull
-    private PackFile readPackFileNode(@NotNull final Node tree, @Nullable final PackFile alreadyExisting) {
-        final PackFile addTo = alreadyExisting == null ? new PackFile() : alreadyExisting;
-        tree.children().forEach(statement -> {
+    private PackFile readPackFileNode(@NotNull final Pair<File, Node> tree, @Nullable final PackFile alreadyExisting, @NotNull final File root) {
+        final PackFile addTo = alreadyExisting == null ? new PackFile(tree.getLeft(), root) : alreadyExisting;
+        tree.getRight().children().forEach(statement -> {
             switch (statement.type()) {
-                case MATCH_STATEMENT -> readMatchStatement(statement, addTo);
+                case MATCH_STATEMENT -> readMatchStatement(statement, addTo, root);
                 case LET_STATEMENT, GLOBAL_STATEMENT -> definePackVariable(statement, addTo);
             }
         });
         return addTo;
     }
 
-    private void readPackFiles(@NotNull final Collection<Node> trees) {
-        trees.stream().map(this::readPackFileNode).forEach(workspace.packFiles()::add);
+    private void readPackFiles(@NotNull final Collection<Pair<File, Node>> trees, @NotNull final File root) {
+        trees.stream().map(t -> readPackFileNode(t, root)).forEach(workspace.packFiles()::add);
     }
 
     @NotNull
-    private Set<Node> parseAllOfDirectory(@NotNull final File directory) {
+    private Set<Pair<File, Node>> parseAllOfDirectory(@NotNull final File directory) {
         logger.info("Parsing all files of directory '" + directory.getAbsolutePath() + "'...");
 
         if (!directory.isDirectory()) throw new IllegalArgumentException("Not a directory: " + directory);
         try (final Stream<Path> paths = Files.walk(directory.toPath())) {
-            final Set<Optional<Node>> optionalNodes = paths.map(Path::toFile).filter(File::isFile).map(this::parse).collect(Collectors.toSet());
-            if (optionalNodes.stream().anyMatch(Optional::isEmpty)) throw new Exception("See previous error");
+            final Set<File> files = paths.map(Path::toFile)
+                    .filter(File::isFile)
+                    .filter(f -> f.getName().endsWith(".rep"))
+                    .collect(Collectors.toSet());
 
-            return optionalNodes.stream().filter(Optional::isPresent).map(Optional::get).collect(Collectors.toSet());
+            final Set<Pair<File, Optional<Node>>> optionalNodes = files.stream().map(f -> Pair.of(f, parse(f))).collect(Collectors.toSet());
+            if (optionalNodes.stream().anyMatch(p -> p.getRight().isEmpty())) throw new Exception("See previous error");
+
+            return optionalNodes.stream().filter(p -> p.getRight().isPresent()).map(p -> Pair.of(p.getLeft(), p.getRight().get())).collect(Collectors.toSet());
         } catch (final Exception e) {
             workspaceError("Could not read pack workspace '" + directory.getAbsolutePath() + "': " + e.getMessage());
             if (!e.getMessage().equals("See previous error")) e.printStackTrace(logger);

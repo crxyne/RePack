@@ -4,8 +4,8 @@ import org.crayne.repack.core.single.predicate.PackPredicate;
 import org.crayne.repack.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class PackFile {
@@ -16,14 +16,17 @@ public class PackFile {
     @NotNull
     private final List<PackPredicate> matches;
 
-    public PackFile(@NotNull final Collection<PackVariable> variables, @NotNull final Collection<PackPredicate> matches) {
-        this.variables = new ArrayList<>(variables);
-        this.matches = new ArrayList<>(matches);
-    }
+    @NotNull
+    private final File file;
 
-    public PackFile() {
+    @NotNull
+    private final File root;
+
+    public PackFile(@NotNull final File file, @NotNull final File root) {
         this.variables = new ArrayList<>();
         this.matches = new ArrayList<>();
+        this.file = file;
+        this.root = root;
     }
 
     @NotNull
@@ -34,6 +37,16 @@ public class PackFile {
     @NotNull
     public List<PackVariable> variables() {
         return variables;
+    }
+
+    @NotNull
+    public File file() {
+        return file;
+    }
+
+    @NotNull
+    public File root() {
+        return root;
     }
 
     public void defineVariable(@NotNull final PackVariable variable) {
