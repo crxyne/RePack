@@ -8,6 +8,8 @@ public enum TextureType {
 
     ITEMS,
     ARMOR,
+    ARMOR_L1,
+    ARMOR_L2,
     ELYTRAS;
 
     @Nullable
@@ -17,12 +19,14 @@ public enum TextureType {
             case ITEMS -> ITEMS;
             case ARMOR -> ARMOR;
             case ELYTRAS -> ELYTRAS;
+            case ARMOR_L1 -> ARMOR_L1;
+            case ARMOR_L2 -> ARMOR_L2;
         };
     }
 
     public String toString() {
         return switch (this) {
-            case ARMOR -> "armor";
+            case ARMOR, ARMOR_L1, ARMOR_L2 -> "armor";
             case ITEMS -> "item";
             case ELYTRAS -> "elytra";
         };

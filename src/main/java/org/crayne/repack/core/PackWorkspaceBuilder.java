@@ -107,6 +107,8 @@ public class PackWorkspaceBuilder {
         final PredicateType type = switch (parentType) {
             case ITEM_LISTING_PREDICATE -> PredicateType.ITEMS;
             case ARMOR_LISTING_PREDICATE -> PredicateType.ARMOR;
+            case ARMOR_L1_LISTING_PREDICATE -> PredicateType.ARMOR_L1;
+            case ARMOR_L2_LISTING_PREDICATE -> PredicateType.ARMOR_L2;
             case ELYTRA_LISTING_PREDICATE -> PredicateType.ELYTRAS;
             case MATCH_STATEMENT -> PredicateType.MATCH;
             default -> null;
@@ -134,6 +136,8 @@ public class PackWorkspaceBuilder {
         final PredicateType predicateType = switch (type) {
             case ITEM_SETALL_PREDICATE -> PredicateType.ITEMS;
             case ARMOR_SETALL_PREDICATE -> PredicateType.ARMOR;
+            case ARMOR_L1_SETALL_PREDICATE -> PredicateType.ARMOR_L1;
+            case ARMOR_L2_SETALL_PREDICATE -> PredicateType.ARMOR_L2;
             case ELYTRA_SETALL_PREDICATE -> PredicateType.ELYTRAS;
             default -> null;
         };
@@ -162,6 +166,8 @@ public class PackWorkspaceBuilder {
         final PredicateType type = switch (parentType) {
             case ITEM_LISTING_PREDICATE -> PredicateType.ITEMS;
             case ARMOR_LISTING_PREDICATE -> PredicateType.ARMOR;
+            case ARMOR_L1_LISTING_PREDICATE -> PredicateType.ARMOR_L1;
+            case ARMOR_L2_LISTING_PREDICATE -> PredicateType.ARMOR_L2;
             case ELYTRA_LISTING_PREDICATE -> PredicateType.ELYTRAS;
             default -> null;
         };
@@ -277,12 +283,13 @@ public class PackWorkspaceBuilder {
         forStatement.children().forEach(s -> {
             if (encounteredError) return;
             switch (s.type()) {
-                case ITEM_LISTING_PREDICATE,
-                        ARMOR_LISTING_PREDICATE, ELYTRA_LISTING_PREDICATE -> readForStatement(s, addTo, matchPredicate, root);
+                case ITEM_LISTING_PREDICATE, ARMOR_LISTING_PREDICATE,
+                        ARMOR_L1_LISTING_PREDICATE, ARMOR_L2_LISTING_PREDICATE, ELYTRA_LISTING_PREDICATE -> readForStatement(s, addTo, matchPredicate, root);
                 case PREDICATE_STATEMENT -> defineSimplePredicate(s, addTo, matchPredicate, root);
-                case ARMOR_SETALL_PREDICATE, ITEM_SETALL_PREDICATE, ELYTRA_SETALL_PREDICATE -> defineSetAllPredicate(s, addTo, matchPredicate, root);
+                case ARMOR_SETALL_PREDICATE, ARMOR_L1_SETALL_PREDICATE, ARMOR_L2_SETALL_PREDICATE,
+                        ITEM_SETALL_PREDICATE, ELYTRA_SETALL_PREDICATE -> defineSetAllPredicate(s, addTo, matchPredicate, root);
                 case MAPALL_PREDICATE -> defineMapAllPredicate(s, addTo, matchPredicate, root);
-                case LITERAL_FOR, LITERAL_ARMOR, LITERAL_ELYTRAS, LITERAL_ITEMS, LITERAL_ANY, IDENTIFIER_LIST -> {}
+                case LITERAL_FOR, LITERAL_ARMOR, LITERAL_ARMOR_L1, LITERAL_ARMOR_L2, LITERAL_ELYTRAS, LITERAL_ITEMS, LITERAL_ANY, IDENTIFIER_LIST -> {}
                 default -> workspaceError("An unexpected error occurred, invalid match-for node: unexpected sub-node " + s.type().name());
             }
         });

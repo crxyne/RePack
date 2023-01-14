@@ -52,12 +52,24 @@ public class TreeAnalyzer {
         this.put(NodeType.ARMOR_LISTING_PREDICATE,  List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
         this.put(NodeType.ARMOR_SETALL_PREDICATE,   List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
 
+        this.put(NodeType.ARMOR_L1_LISTING_PREDICATE,  List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
+        this.put(NodeType.ARMOR_L1_SETALL_PREDICATE,   List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
+
+        this.put(NodeType.ARMOR_L2_LISTING_PREDICATE,  List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
+        this.put(NodeType.ARMOR_L2_SETALL_PREDICATE,   List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
+
         this.put(NodeType.ELYTRA_LISTING_PREDICATE, List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
         this.put(NodeType.ELYTRA_SETALL_PREDICATE,  List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
 
-        this.put(NodeType.PREDICATE_STATEMENT,      List.of(NodeType.MATCH_STATEMENT, NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE));
-        this.put(NodeType.IDENTIFIER_LIST,          List.of(NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE));
-        this.put(NodeType.MAPALL_PREDICATE,         List.of(NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE));
+        this.put(NodeType.PREDICATE_STATEMENT,      List.of(NodeType.MATCH_STATEMENT, NodeType.ITEM_LISTING_PREDICATE,
+                                                                NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE,
+                                                                NodeType.ARMOR_L1_LISTING_PREDICATE, NodeType.ARMOR_L2_LISTING_PREDICATE));
+
+        this.put(NodeType.IDENTIFIER_LIST,          List.of(NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE,
+                                                                NodeType.ARMOR_L1_LISTING_PREDICATE, NodeType.ARMOR_L2_LISTING_PREDICATE));
+
+        this.put(NodeType.MAPALL_PREDICATE,         List.of(NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE,
+                                                                NodeType.ARMOR_L1_LISTING_PREDICATE, NodeType.ARMOR_L2_LISTING_PREDICATE));
     }};
 
     private boolean hasChildNode(@NotNull final Node parent, @Nullable final NodeType requiredParentType, @NotNull final NodeType childType) {
@@ -91,7 +103,8 @@ public class TreeAnalyzer {
                 // check nested nodes and ignore first token, which simply is there for file, line and column information
                 final boolean noerror = switch (child.type()) {
                     case MATCH_STATEMENT, FOR_STATEMENT, ANY_STATEMENT, ITEM_LISTING_PREDICATE,
-                            ARMOR_LISTING_PREDICATE, ELYTRA_LISTING_PREDICATE -> analyzeCurrentScope(child.type(), child.children(), 1);
+                            ARMOR_LISTING_PREDICATE, ARMOR_L1_LISTING_PREDICATE, ARMOR_L2_LISTING_PREDICATE,
+                            ELYTRA_LISTING_PREDICATE -> analyzeCurrentScope(child.type(), child.children(), 1);
                     default -> true;
                 };
                 if (!noerror) return false;
@@ -100,6 +113,8 @@ public class TreeAnalyzer {
                 final boolean noMissingStatements = checkChildNode(child, NodeType.MATCH_STATEMENT, NodeType.FOR_STATEMENT)
                         && checkMapAllPredicate(child, NodeType.ITEM_LISTING_PREDICATE)
                         && checkMapAllPredicate(child, NodeType.ARMOR_LISTING_PREDICATE)
+                        && checkMapAllPredicate(child, NodeType.ARMOR_L1_LISTING_PREDICATE)
+                        && checkMapAllPredicate(child, NodeType.ARMOR_L2_LISTING_PREDICATE)
                         && checkMapAllPredicate(child, NodeType.ELYTRA_LISTING_PREDICATE);
                 if (!noMissingStatements) return false;
 

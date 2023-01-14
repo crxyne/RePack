@@ -22,10 +22,14 @@ public enum NodeType {
 
     ITEM_LISTING_PREDICATE(null),
     ARMOR_LISTING_PREDICATE(null),
+    ARMOR_L1_LISTING_PREDICATE(null),
+    ARMOR_L2_LISTING_PREDICATE(null),
     ELYTRA_LISTING_PREDICATE(null),
 
     ITEM_SETALL_PREDICATE(null),
     ARMOR_SETALL_PREDICATE(null),
+    ARMOR_L1_SETALL_PREDICATE(null),
+    ARMOR_L2_SETALL_PREDICATE(null),
     ELYTRA_SETALL_PREDICATE(null),
 
     MAPALL_PREDICATE(null),
@@ -44,6 +48,8 @@ public enum NodeType {
     LITERAL_ITEMS("items"),
     LITERAL_ELYTRAS("elytras"),
     LITERAL_ARMOR("armor"),
+    LITERAL_ARMOR_L1("armor_l1"),
+    LITERAL_ARMOR_L2("armor_l2"),
 
     LBRACE("{"),
     RBRACE("}"),
@@ -78,7 +84,7 @@ public enum NodeType {
         return switch (this) {
             case LITERAL_FOR, LITERAL_MATCH, LITERAL_LET, LITERAL_TEMPLATE,
                     LITERAL_USE, LITERAL_ANY, LITERAL_ITEMS, LITERAL_ELYTRAS,
-                    LITERAL_ARMOR, LITERAL_GLOBAL -> true;
+                    LITERAL_ARMOR, LITERAL_GLOBAL, LITERAL_ARMOR_L1, LITERAL_ARMOR_L2 -> true;
             default -> false;
         };
     }

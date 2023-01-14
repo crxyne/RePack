@@ -193,6 +193,14 @@ public class CITPropertyFile {
                 final String armor = StringUtils.substringBefore(s, "_");
                 yield "texture." + armor + "_layer_1" + "=" + value + "\n" + "texture." + armor + "_layer_2" + "=" + value;
             }
+            case ARMOR_L1 -> {
+                final String armor = StringUtils.substringBefore(s, "_");
+                yield "texture." + armor + "_layer_1" + "=" + value;
+            }
+            case ARMOR_L2 -> {
+                final String armor = StringUtils.substringBefore(s, "_");
+                yield "texture." + armor + "_layer_2" + "=" + value;
+            }
             case ELYTRAS -> "texture.elytra" + "=" + value;
             case ITEMS -> "texture." + s + "=" + value;
         };

@@ -144,6 +144,8 @@ public class Parser {
             case LITERAL_ANY      -> parseAny       (current);
             case LITERAL_FOR      -> parseFor       (current);
             case LITERAL_ARMOR    -> parseArmor     (current);
+            case LITERAL_ARMOR_L1 -> parseArmorL1   (current);
+            case LITERAL_ARMOR_L2 -> parseArmorL2   (current);
             case LITERAL_ITEMS    -> parseItems     (current);
             case LITERAL_ELYTRAS  -> parseElytras   (current);
             case IDENTIFIER       -> parseIdentifier(current);
@@ -248,7 +250,8 @@ public class Parser {
 
     private Node parseMapAll(@NotNull final Token current) {
         if (checkLastScope(current, "value identifier list",
-                NodeType.ELYTRA_LISTING_PREDICATE, NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE
+                NodeType.ELYTRA_LISTING_PREDICATE, NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE,
+                NodeType.ARMOR_L1_LISTING_PREDICATE, NodeType.ARMOR_L2_LISTING_PREDICATE
         )) return null;
 
         final NodeType stringListOrPredicateMap = lastScope.children().size() >= 2 ? lastScope.child(1).type() : null;
@@ -279,6 +282,14 @@ public class Parser {
 
     private Node parseArmor(@NotNull final Token current) {
         return parseRetextureStatement(current, NodeType.ARMOR_LISTING_PREDICATE, NodeType.ARMOR_SETALL_PREDICATE);
+    }
+
+    private Node parseArmorL1(@NotNull final Token current) {
+        return parseRetextureStatement(current, NodeType.ARMOR_L1_LISTING_PREDICATE, NodeType.ARMOR_L1_SETALL_PREDICATE);
+    }
+
+    private Node parseArmorL2(@NotNull final Token current) {
+        return parseRetextureStatement(current, NodeType.ARMOR_L2_LISTING_PREDICATE, NodeType.ARMOR_L2_SETALL_PREDICATE);
     }
 
     private Node parseItems(@NotNull final Token current) {
