@@ -2,6 +2,9 @@ package org.crayne.repack.util;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collection;
+import java.util.stream.Collectors;
+
 public class StringUtil {
 
     private StringUtil() {}
@@ -17,6 +20,11 @@ public class StringUtil {
         if (pattern.length() > 0 && pattern.charAt(0) == '*')
             return matchPattern(pattern.substring(1), str) || matchPattern(pattern, str.substring(1));
         return false;
+    }
+
+    @NotNull
+    public static <T> String stringOf(@NotNull final Collection<T> collection) {
+        return "{" + (collection.isEmpty() ? "" : "\n") + collection.stream().map(Object::toString).collect(Collectors.joining(", \n")).indent(3) + "}";
     }
 
 }

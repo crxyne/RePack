@@ -3,9 +3,7 @@ package org.crayne.repack.core;
 import org.crayne.repack.core.single.PackFile;
 import org.crayne.repack.core.single.PackVariable;
 import org.crayne.repack.core.single.PredicateType;
-import org.crayne.repack.core.single.predicate.PackMapAllPredicate;
-import org.crayne.repack.core.single.predicate.PackSimplePredicate;
-import org.crayne.repack.core.single.predicate.PackSupredicate;
+import org.crayne.repack.core.single.predicate.*;
 import org.crayne.repack.util.logging.Logger;
 import org.crayne.repack.util.logging.LoggingLevel;
 import org.crayne.repack.parsing.ast.Node;
@@ -75,16 +73,25 @@ public class PackWorkspaceBuilder {
         return readPackFileNode(tree, null);
     }
 
-    private void defineSimplePredicate(@NotNull final Node statement, @NotNull final PackFile addTo) {
+    @Nullable
+    private PackPredicate defineSimplePredicate(@NotNull final Node statement, @NotNull final PackFile addTo, @Nullable final PackMatchPredicate matchPredicate) {
         final Token ident = statement.child(0).value();
         final Token value = statement.child(2).value();
+
         final Node parent = statement.parent();
         final NodeType parentType = parent == null ? null : parent.type();
 
         if (ident == null || value == null || parentType == null) {
             workspaceError("An unexpected error occurred, invalid AST node encountered for predicate statement");
-            return;
+            return null;
         }
+        final Node parentTemp = parent.parent();
+
+        if (parentTemp != null && parentTemp.type() != NodeType.PARENT && parentTemp.type() != NodeType.FOR_STATEMENT) {
+            workspaceError("An unexpected error occurred, invalid AST node encountered for predicate statement (" + parentTemp.type() + ")");
+            return null;
+        }
+
         final PredicateType type = switch (parentType) {
             case ITEM_LISTING_PREDICATE -> PredicateType.ITEMS;
             case ARMOR_LISTING_PREDICATE -> PredicateType.ARMOR;
@@ -93,10 +100,15 @@ public class PackWorkspaceBuilder {
             default -> null;
         };
         final String finalValue = replaceVariables(value.noStringLiterals(), value, workspace.globalVariables(), addTo.variables());
-        addTo.definePredicate(new PackSimplePredicate(ident.token(), finalValue, type));
+        final PackPredicate predicate = type == PredicateType.MATCH ? new PackMatchPredicate(ident, finalValue) : new PackSimplePredicate(ident, finalValue, type);
+
+        if (matchPredicate == null) addTo.definePredicate(predicate);
+        else matchPredicate.predicates().add(predicate);
+
+        return predicate;
     }
 
-    private void defineSetAllPredicate(@NotNull final Node statement, @NotNull final PackFile addTo) {
+    private void defineSetAllPredicate(@NotNull final Node statement, @NotNull final PackFile addTo, @Nullable final PackMatchPredicate matchPredicate) {
         final Token value = statement.child(1).value();
         final NodeType type = statement.type();
 
@@ -115,10 +127,13 @@ public class PackWorkspaceBuilder {
             return;
         }
         final String finalValue = replaceVariables(value.noStringLiterals(), value, workspace.globalVariables(), addTo.variables());
-        addTo.definePredicate(new PackSupredicate(predicateType, finalValue));
+        final PackPredicate predicate = new PackSupredicate(predicateType, finalValue);
+
+        if (matchPredicate == null) addTo.definePredicate(predicate);
+        else matchPredicate.predicates().add(predicate);
     }
 
-    private void defineMapAllPredicate(@NotNull final Node statement, @NotNull final PackFile addTo) {
+    private void defineMapAllPredicate(@NotNull final Node statement, @NotNull final PackFile addTo, @Nullable final PackMatchPredicate matchPredicate) {
         final Token value = statement.child(0).value();
         final Node parent = statement.parent();
         final NodeType parentType = parent == null ? null : parent.type();
@@ -143,17 +158,19 @@ public class PackWorkspaceBuilder {
             workspaceError("An unexpected error occurred, invalid AST node with no identifier list for mapall-predicate statement");
             return;
         }
-        final Set<String> keys = identType == NodeType.MAPALL_PREDICATE
+        final Set<Token> keys = identType == NodeType.MAPALL_PREDICATE
                 ? Collections.emptySet()
                 : identList.children()
                         .stream()
                         .map(Node::value)
                         .map(Objects::requireNonNull)
-                        .map(Token::noStringLiterals)
                         .collect(Collectors.toSet());
 
         final String finalValue = replaceVariables(value.noStringLiterals(), value, workspace.globalVariables(), addTo.variables());
-        addTo.definePredicate(new PackMapAllPredicate(type, keys, finalValue));
+        final PackPredicate predicate = new PackMapAllPredicate(type, keys, finalValue);
+
+        if (matchPredicate == null) addTo.definePredicate(predicate);
+        else matchPredicate.predicates().add(predicate);
     }
 
     @SafeVarargs
@@ -211,16 +228,37 @@ public class PackWorkspaceBuilder {
         addTo.defineVariable(variable);
     }
 
+    private void readMatchStatement(@NotNull final Node statement, @NotNull final PackFile addTo) {
+        final PackPredicate predicate = defineSimplePredicate(statement.child(1), addTo, null);
+        if (!(predicate instanceof final PackMatchPredicate matchPredicate)) {
+            workspaceError("An unexpected error occurred, invalid match node");
+            return;
+        }
+        final Node forStatement = statement.child(2);
+        readForStatement(forStatement, addTo, matchPredicate);
+    }
+
+    private void readForStatement(@NotNull final Node forStatement, @NotNull final PackFile addTo, @NotNull final PackMatchPredicate matchPredicate) {
+        forStatement.children().forEach(s -> {
+            if (encounteredError) return;
+            switch (s.type()) {
+                case ITEM_LISTING_PREDICATE,
+                        ARMOR_LISTING_PREDICATE, ELYTRA_LISTING_PREDICATE -> readForStatement(s, addTo, matchPredicate);
+                case PREDICATE_STATEMENT -> defineSimplePredicate(s, addTo, matchPredicate);
+                case ARMOR_SETALL_PREDICATE, ITEM_SETALL_PREDICATE, ELYTRA_SETALL_PREDICATE -> defineSetAllPredicate(s, addTo, matchPredicate);
+                case MAPALL_PREDICATE -> defineMapAllPredicate(s, addTo, matchPredicate);
+                case LITERAL_FOR, LITERAL_ARMOR, LITERAL_ELYTRAS, LITERAL_ITEMS -> {}
+                default -> workspaceError("An unexpected error occurred, invalid match-for node: unexpected sub-node " + s.type().name());
+            }
+        });
+    }
+
     @NotNull
     private PackFile readPackFileNode(@NotNull final Node tree, @Nullable final PackFile alreadyExisting) {
         final PackFile addTo = alreadyExisting == null ? new PackFile() : alreadyExisting;
         tree.children().forEach(statement -> {
             switch (statement.type()) {
-                case MATCH_STATEMENT, FOR_STATEMENT, ITEM_LISTING_PREDICATE,
-                        ARMOR_LISTING_PREDICATE, ELYTRA_LISTING_PREDICATE -> readPackFileNode(statement, addTo);
-                case PREDICATE_STATEMENT -> defineSimplePredicate(statement, addTo);
-                case ARMOR_SETALL_PREDICATE, ITEM_SETALL_PREDICATE, ELYTRA_SETALL_PREDICATE -> defineSetAllPredicate(statement, addTo);
-                case MAPALL_PREDICATE -> defineMapAllPredicate(statement, addTo);
+                case MATCH_STATEMENT -> readMatchStatement(statement, addTo);
                 case LET_STATEMENT, GLOBAL_STATEMENT -> definePackVariable(statement, addTo);
             }
         });

@@ -1,6 +1,8 @@
 package org.crayne.repack.core.single.predicate;
 
 import org.crayne.repack.core.single.PredicateType;
+import org.crayne.repack.parsing.lexer.Token;
+import org.crayne.repack.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -14,12 +16,12 @@ public class PackMapAllPredicate implements PackPredicate {
     private final PredicateType type;
 
     @NotNull
-    private final List<String> keys;
+    private final List<Token> keys;
 
     @NotNull
     private final String predicate;
 
-    public PackMapAllPredicate(@NotNull final PredicateType type, @NotNull final Collection<String> keys, @NotNull final String predicate) {
+    public PackMapAllPredicate(@NotNull final PredicateType type, @NotNull final Collection<Token> keys, @NotNull final String predicate) {
         this.type = type;
         this.keys = new ArrayList<>(keys);
         this.predicate = predicate;
@@ -31,7 +33,7 @@ public class PackMapAllPredicate implements PackPredicate {
     }
 
     @NotNull
-    public List<String> keys() {
+    public List<Token> keys() {
         return keys;
     }
 
@@ -42,10 +44,10 @@ public class PackMapAllPredicate implements PackPredicate {
 
     @NotNull
     public String toString() {
-        return "PackMapAllPredicate{" +
-                "type=" + type +
-                ", keys=" + keys +
-                ", predicate='" + predicate + '\'' +
+        return "PackMapAllPredicate {" +
+                "type = " + type +
+                ", keys = " + StringUtil.stringOf(keys.stream().map(Token::token).toList()) +
+                ", predicate = '" + predicate + '\'' +
                 '}';
     }
 }

@@ -1,6 +1,7 @@
 package org.crayne.repack.core.single;
 
 import org.crayne.repack.core.single.predicate.PackPredicate;
+import org.crayne.repack.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -13,21 +14,21 @@ public class PackFile {
     private final List<PackVariable> variables;
 
     @NotNull
-    private final List<PackPredicate> predicates;
+    private final List<PackPredicate> matches;
 
-    public PackFile(@NotNull final Collection<PackVariable> variables, @NotNull final Collection<PackPredicate> predicates) {
+    public PackFile(@NotNull final Collection<PackVariable> variables, @NotNull final Collection<PackPredicate> matches) {
         this.variables = new ArrayList<>(variables);
-        this.predicates = new ArrayList<>(predicates);
+        this.matches = new ArrayList<>(matches);
     }
 
     public PackFile() {
         this.variables = new ArrayList<>();
-        this.predicates = new ArrayList<>();
+        this.matches = new ArrayList<>();
     }
 
     @NotNull
-    public List<PackPredicate> predicates() {
-        return predicates;
+    public List<PackPredicate> matches() {
+        return matches;
     }
 
     @NotNull
@@ -44,14 +45,14 @@ public class PackFile {
     }
 
     public void definePredicate(@NotNull final PackPredicate predicate) {
-        predicates.add(predicate);
+        matches.add(predicate);
     }
 
     @NotNull
     public String toString() {
-        return "PackFile{" +
-                "variables=" + variables +
-                ", predicates=" + predicates +
+        return "PackFile {\n" +
+                ("variables = " + StringUtil.stringOf(variables) +
+                ", \nmatches = " + StringUtil.stringOf(matches)).indent(3) +
                 '}';
     }
 

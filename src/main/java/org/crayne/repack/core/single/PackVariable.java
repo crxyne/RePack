@@ -6,9 +6,9 @@ public record PackVariable(@NotNull String name, @NotNull String value) {
 
     @NotNull
     public String toString() {
-        return "PackVariable{" +
-                "name='" + name + '\'' +
-                ", value='" + value + '\'' +
+        return "PackVariable {" +
+                "name = '" + name + '\'' +
+                ", value = '" + value + '\'' +
                 '}';
     }
 }

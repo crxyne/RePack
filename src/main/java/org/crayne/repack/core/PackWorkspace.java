@@ -2,6 +2,7 @@ package org.crayne.repack.core;
 
 import org.crayne.repack.core.single.PackFile;
 import org.crayne.repack.core.single.PackVariable;
+import org.crayne.repack.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -45,9 +46,9 @@ public class PackWorkspace {
 
     @NotNull
     public String toString() {
-        return "PackWorkspace{" +
-                "packFiles=" + packFiles +
-                ", globalVariables=" + globalVariables +
+        return "PackWorkspace {\n" +
+                ("packFiles = " + StringUtil.stringOf(packFiles) +
+                ", globalVariables = " + StringUtil.stringOf(globalVariables)).indent(3) +
                 '}';
     }
 

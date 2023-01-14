@@ -8,9 +8,9 @@ public record PackSupredicate(@NotNull PredicateType type, @NotNull String predi
 
     @NotNull
     public String toString() {
-        return "PackSupredicate{" +
-                "type=" + type +
-                ", predicate='" + predicate + '\'' +
+        return "PackSupredicate {" +
+                "type = " + type +
+                ", predicate = '" + predicate + '\'' +
                 '}';
     }
 }
