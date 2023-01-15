@@ -32,12 +32,16 @@ public class CITPropertyFile {
     @NotNull
     private final Set<PackSimplePredicate> predicates;
 
+    private final int weight;
+
     public CITPropertyFile(@NotNull final TextureType type, @NotNull final String textureFilePath,
-                           @NotNull final ItemMatch itemMatch, @NotNull final Collection<PackSimplePredicate> predicates) {
+                           @NotNull final ItemMatch itemMatch, @NotNull final Collection<PackSimplePredicate> predicates,
+                           final int weight) {
         this.type = type;
         this.textureFilePath = textureFilePath;
         this.itemMatch = itemMatch;
         this.predicates = new HashSet<>(predicates);
+        this.weight = weight;
     }
 
     @NotNull
@@ -180,7 +184,7 @@ public class CITPropertyFile {
                 .stream()
                 .map(t -> itemMatchesGrouped.get(t)
                         .stream()
-                        .map(i -> new CITPropertyFile(t, i.texture(), i, matchPredicate.matchPredicates()))
+                        .map(i -> new CITPropertyFile(t, i.texture(), i, matchPredicate.matchPredicates(), matchPredicate.weight()))
                         .collect(Collectors.toSet()))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
@@ -232,7 +236,7 @@ public class CITPropertyFile {
     private String nbtMatchAsString() {
         return predicates.stream()
                 .map(p -> "nbt." + p.key().token() + "=" + p.value())
-                .collect(Collectors.joining("\n"));
+                .collect(Collectors.joining("\n")) + (weight == 0 ? "" : "\n");
     }
 
     @NotNull
@@ -241,11 +245,17 @@ public class CITPropertyFile {
     }
 
     @NotNull
+    private String weightAsString() {
+        return weight == 0 ? "" : "weight=" + weight;
+    }
+
+    @NotNull
     public String compile() {
         return textureTypeAsString()
                 + itemMatchAsString()
                 + textureOverrideAsString()
-                + nbtMatchAsString();
+                + nbtMatchAsString()
+                + weightAsString();
     }
 
     @NotNull

@@ -261,7 +261,24 @@ public class PackWorkspaceBuilder {
                 .filter(Objects::nonNull)
                 .toList();
 
-        final PackMatchPredicate matchPredicate = new PackMatchPredicate(matchPredicates);
+        final Optional<Token> customWeightToken = statement.children()
+                .stream()
+                .filter(n -> n.type() == NodeType.MATCH_WEIGHT_STATEMENT)
+                .findFirst()
+                .map(Node::value);
+
+        final Optional<Integer> customWeight;
+        try {
+            customWeight = customWeightToken
+                    .map(Token::noStringLiterals)
+                    .map(Integer::parseInt);
+        } catch (final NumberFormatException e) {
+            customWeightToken.ifPresent(t -> logger.traceback("Could not parse custom weight '" + t.noStringLiterals() + "', not a valid integer.", t, LoggingLevel.ANALYZING_ERROR));
+            encounteredError = true;
+            return;
+        }
+
+        final PackMatchPredicate matchPredicate = new PackMatchPredicate(matchPredicates, customWeight.orElse(0));
         final Optional<Node> forStatement = statement.children().stream().filter(n -> n.type() == NodeType.FOR_STATEMENT).findFirst();
 
         if (forStatement.isEmpty()) {

@@ -1,0 +1,14 @@
+/+let name = "blue frog"
+let filename = "blue_frog"
+
+match {
+	display.Name = "ipattern:*$(name)*"
+} for {
+	items {
+		carved_pumpkin
+	} model {
+		texture_in = "$(filename)"
+		texture_out = "hats/frog/$(filename)"
+		json = "$(filename).json"
+	}
+}+/

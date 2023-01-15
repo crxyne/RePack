@@ -46,6 +46,13 @@ public class Node {
         children = new ArrayList<>();
     }
 
+    public Node(@NotNull final NodeType type, @NotNull final Token value) {
+        this.type = type;
+        this.value = value;
+        this.parent = null;
+        children = new ArrayList<>();
+    }
+
     public Node(@NotNull final Token token) {
         this.type = NodeType.of(token);
         this.value = token;

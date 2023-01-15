@@ -16,6 +16,7 @@ public enum NodeType {
     LET_STATEMENT(null),
     GLOBAL_STATEMENT(null),
     MATCH_STATEMENT(null),
+    MATCH_WEIGHT_STATEMENT(null),
     FOR_STATEMENT(null),
     ANY_STATEMENT(null),
     IDENTIFIER_LIST(null),
@@ -40,6 +41,7 @@ public enum NodeType {
     LITERAL_TEMPLATE("template"),
     LITERAL_USE("use"),
     LITERAL_MATCH("match"),
+    LITERAL_WEIGHT("#weight"),
     LITERAL_FOR("for"),
     LITERAL_LET("let"),
     LITERAL_GLOBAL("global"),
@@ -84,7 +86,8 @@ public enum NodeType {
         return switch (this) {
             case LITERAL_FOR, LITERAL_MATCH, LITERAL_LET, LITERAL_TEMPLATE,
                     LITERAL_USE, LITERAL_ANY, LITERAL_ITEMS, LITERAL_ELYTRAS,
-                    LITERAL_ARMOR, LITERAL_GLOBAL, LITERAL_ARMOR_L1, LITERAL_ARMOR_L2 -> true;
+                    LITERAL_ARMOR, LITERAL_GLOBAL, LITERAL_ARMOR_L1, LITERAL_ARMOR_L2,
+                    LITERAL_WEIGHT -> true;
             default -> false;
         };
     }

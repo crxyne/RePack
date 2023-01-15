@@ -15,14 +15,18 @@ public class PackMatchPredicate implements PackPredicate {
     @NotNull
     private final List<PackSimplePredicate> matchPredicates;
 
-    public PackMatchPredicate(@NotNull final Collection<PackSimplePredicate> matchPredicates) {
+    private final int weight;
+
+    public PackMatchPredicate(@NotNull final Collection<PackSimplePredicate> matchPredicates, final int weight) {
         this.predicates = new HashSet<>();
         this.matchPredicates = new ArrayList<>(matchPredicates);
+        this.weight = weight;
     }
 
-    public PackMatchPredicate(@NotNull final Collection<PackSimplePredicate> matchPredicates, @NotNull final Collection<PackPredicate> predicates) {
+    public PackMatchPredicate(@NotNull final Collection<PackSimplePredicate> matchPredicates, @NotNull final Collection<PackPredicate> predicates, final int weight) {
         this.predicates = new HashSet<>(predicates);
         this.matchPredicates = new ArrayList<>(matchPredicates);
+        this.weight = weight;
     }
 
     @NotNull
@@ -43,6 +47,10 @@ public class PackMatchPredicate implements PackPredicate {
     @NotNull
     public PredicateType type() {
         return PredicateType.MATCH;
+    }
+
+    public int weight() {
+        return weight;
     }
 
     @NotNull

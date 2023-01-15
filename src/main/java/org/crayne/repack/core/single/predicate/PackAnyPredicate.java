@@ -5,7 +5,7 @@ import java.util.HashSet;
 public class PackAnyPredicate extends PackMatchPredicate {
 
     public PackAnyPredicate() {
-        super(new HashSet<>());
+        super(new HashSet<>(), 0);
     }
 
 }

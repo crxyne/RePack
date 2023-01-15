@@ -45,6 +45,7 @@ public class TreeAnalyzer {
         this.put(NodeType.MATCH_STATEMENT,          List.of(NodeType.PARENT));
         this.put(NodeType.ANY_STATEMENT,            List.of(NodeType.PARENT));
         this.put(NodeType.FOR_STATEMENT,            List.of(NodeType.MATCH_STATEMENT));
+        this.put(NodeType.MATCH_WEIGHT_STATEMENT,   List.of(NodeType.MATCH_STATEMENT));
 
         this.put(NodeType.ITEM_LISTING_PREDICATE,   List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));
         this.put(NodeType.ITEM_SETALL_PREDICATE,    List.of(NodeType.FOR_STATEMENT, NodeType.ANY_STATEMENT));

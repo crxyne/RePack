@@ -226,7 +226,20 @@ public class Parser {
     }
 
     private Node parseMatch(@NotNull final Token current) {
-        return parseStatementScope(current, NodeType.MATCH_STATEMENT);
+        final Token maybeWeight = currentToken();
+        if (NodeType.of(maybeWeight) != NodeType.LITERAL_WEIGHT)
+            return parseStatementScope(current, NodeType.MATCH_STATEMENT);
+
+        nextToken();
+        final Token weight = currentToken();
+        if (expect(weight, NodeType.STRING_LITERAL)) return null;
+
+        nextToken();
+        final Node statement = parseStatementScope(current, NodeType.MATCH_STATEMENT);
+        if (statement == null) return null;
+
+        statement.addChildren(new Node(NodeType.MATCH_WEIGHT_STATEMENT, weight));
+        return statement;
     }
 
     private Node parseAny(@NotNull final Token current) {
