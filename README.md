@@ -45,7 +45,7 @@ To use RePack, you need:
 - At least a few MB of free memory on your disk
 - The newest release of this project on that same functioning computer.
 
-Download and unzip the project from the releases tab into any directory on your computer.
+Download and unzip the project from the [releases](https://github.com/crxyne/RePack/releases/tag/b0.0.1) into any directory on your computer.
 
 ### Compiling the example pack
 Open up your terminal in the same directory as the unzipped release you hopefully just downloaded. To see all commands:
