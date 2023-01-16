@@ -40,5 +40,6 @@ The goal of RePack is to fully support everything that the optifine pack format 
 
 ## Current TODOs
 - Custom item models
+- Templates
 - Commandline interface
 - In the future, a GUI interface, to create RePack texture packs graphically (will probably be a separate github repository)
