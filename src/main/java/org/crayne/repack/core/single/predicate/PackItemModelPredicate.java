@@ -14,20 +14,11 @@ public class PackItemModelPredicate implements PackPredicate {
     private final List<Token> keys;
 
     @NotNull
-    private final String textureIn;
-
-    @NotNull
-    private final String textureOut;
-
-    @NotNull
     private final String json;
 
-    public PackItemModelPredicate(@NotNull final Collection<Token> keys, @NotNull final String json,
-                                  @NotNull final String textureIn, @NotNull final String textureOut) {
+    public PackItemModelPredicate(@NotNull final Collection<Token> keys, @NotNull final String json) {
         this.keys = new ArrayList<>(keys);
         this.json = json;
-        this.textureIn = textureIn;
-        this.textureOut = textureOut;
     }
 
     @NotNull
@@ -43,16 +34,6 @@ public class PackItemModelPredicate implements PackPredicate {
     @NotNull
     public PredicateType type() {
         return PredicateType.ITEMS;
-    }
-
-    @NotNull
-    public String textureIn() {
-        return textureIn;
-    }
-
-    @NotNull
-    public String textureOut() {
-        return textureOut;
     }
 
     @NotNull

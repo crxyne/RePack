@@ -1,4 +1,4 @@
-/+let name = "blue frog"
+let name = "blue frog"
 let filename = "blue_frog"
 
 match {
@@ -6,9 +6,6 @@ match {
 } for {
 	items {
 		carved_pumpkin
-	} model {
-		texture_in = "$(filename)"
-		texture_out = "hats/frog/$(filename)"
-		json = "$(filename).json"
-	}
-}+/
+	} model = "$(filename).json"
+
+}

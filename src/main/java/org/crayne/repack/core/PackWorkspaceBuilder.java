@@ -275,7 +275,7 @@ public class PackWorkspaceBuilder {
 
         final Optional<Node> customWeightStatement = statement.children()
                 .stream()
-                .filter(n -> n.type() == NodeType.MATCH_WEIGHT_STATEMENT)
+                .filter(n -> n.type() == NodeType.WEIGHT_STATEMENT)
                 .findFirst();
 
         boolean couldNotGetToken;
@@ -294,7 +294,7 @@ public class PackWorkspaceBuilder {
         final Optional<Integer> customWeight;
         try {
             customWeight = customWeightToken
-                    .map(Token::noStringLiterals)
+                    .map(t -> replaceVariables(t.noStringLiterals(), t, workspace.globalVariables(), addTo.variables()))
                     .map(Integer::parseInt);
         } catch (final NumberFormatException e) {
             customWeightToken.ifPresent(t -> logger.traceback("Could not parse custom weight '" + t.noStringLiterals() + "', not a valid integer.", t, LoggingLevel.ANALYZING_ERROR));
@@ -320,6 +320,10 @@ public class PackWorkspaceBuilder {
         addTo.definePredicate(matchPredicate);
     }
 
+    private void defineModel(@NotNull final Node statement, @NotNull final PackFile addTo, @NotNull final PackMatchPredicate matchPredicate, @NotNull final File root) {
+        // TODO
+    }
+
     private void readForStatement(@NotNull final Node forStatement, @NotNull final PackFile addTo, @NotNull final PackMatchPredicate matchPredicate, @NotNull final File root) {
         forStatement.children().forEach(s -> {
             if (encounteredError) return;
@@ -330,6 +334,7 @@ public class PackWorkspaceBuilder {
                 case ARMOR_SETALL_PREDICATE, ARMOR_L1_SETALL_PREDICATE, ARMOR_L2_SETALL_PREDICATE,
                         ITEM_SETALL_PREDICATE, ELYTRA_SETALL_PREDICATE -> defineSetAllPredicate(s, addTo, matchPredicate, root);
                 case MAPALL_PREDICATE -> defineMapAllPredicate(s, addTo, matchPredicate, root);
+                case MODEL_STATEMENT -> defineModel(s, addTo, matchPredicate, root);
                 case LITERAL_FOR, LITERAL_ARMOR, LITERAL_ARMOR_L1, LITERAL_ARMOR_L2, LITERAL_ELYTRAS, LITERAL_ITEMS, LITERAL_ANY, IDENTIFIER_LIST -> {}
                 default -> workspaceError("An unexpected error occurred, invalid match-for node: unexpected sub-node " + s.type().name());
             }

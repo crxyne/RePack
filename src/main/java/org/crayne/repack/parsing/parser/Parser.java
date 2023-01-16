@@ -150,6 +150,7 @@ public class Parser {
             case LITERAL_ELYTRAS  -> parseElytras   (current);
             case IDENTIFIER       -> parseIdentifier(current);
             case SET              -> parseMapAll    (current);
+            case LITERAL_MODEL    -> parseModel     (current);
             case LITERAL_WEIGHT   -> parseWeight    (current);
             default -> {
                 unexpectedToken(current);
@@ -186,7 +187,7 @@ public class Parser {
     }
 
     private Node parseWeight(@NotNull final Token current) {
-        return parsePredicate(NodeType.MATCH_WEIGHT_STATEMENT, current, null);
+        return parsePredicate(NodeType.WEIGHT_STATEMENT, current, null);
     }
 
     private Node parsePredicate(@NotNull final Token current) {
@@ -253,21 +254,33 @@ public class Parser {
         return null;
     }
 
-    private Node parseMapAll(@NotNull final Token current) {
+    private boolean checkWasLastIdentList(@NotNull final Token current) {
         if (checkLastScope(current, "value identifier list",
                 NodeType.ELYTRA_LISTING_PREDICATE, NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE,
                 NodeType.ARMOR_L1_LISTING_PREDICATE, NodeType.ARMOR_L2_LISTING_PREDICATE
-        )) return null;
+        )) return true;
 
         final NodeType stringListOrPredicateMap = lastScope.children().size() >= 2 ? lastScope.child(1).type() : null;
         if (stringListOrPredicateMap != NodeType.IDENTIFIER_LIST && stringListOrPredicateMap != null) {
             parserError("Expected a value identifier list, not a map of predicates and values.", current, "Remove the values (e.g. '= \"something\") from the value map.");
-            return null;
+            return true;
         }
+        return false;
+    }
+
+    private Node parseMapAll(@NotNull final Token current) {
+        if (checkWasLastIdentList(current)) return null;
 
         final Token value = currentToken();
         nextToken();
         tryAdd(lastScope, Node.of(NodeType.MAPALL_PREDICATE, value));
+        return null;
+    }
+
+    private Node parseModel(@NotNull final Token current) {
+        if (checkWasLastIdentList(current)) return null;
+
+        tryAdd(lastScope, parsePredicate(NodeType.MODEL_STATEMENT, current, null));
         return null;
     }
 
