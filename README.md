@@ -8,7 +8,7 @@ An efficient new texture pack format that ""compiles"" to a normal minecraft tex
 - Less copypaste in general, as wildcards (\* and \*?) are supported in item name matches
 
 ## Example
-RePack fully supports matching custom nbt to textures, such as custom display names. The following example would texture any armor to emerald armor (impractical and a dumb idea, but works as an example i guess?) if the given item name contains "emerald armor" (case insensitive)
+RePack fully supports matching custom nbt to textures, such as custom display names. The following example would give any armor the emerald armor texture,  if the given item name contains "emerald armor" (case insensitive) [of course, only if the given texture files actually exist]
 ```rs
 let filename = "textures/emerald_armor"
 let name = "emerald armor"
@@ -30,7 +30,7 @@ match {
     } = "$(filename)"
 }
 ```
-Note that the equivalent would have to match for every single item separately, for both the item and armor; Here it's as simple as using something like \*\_helmet.
+Note that the vanilla optifine pack equivalent would have to match for every single item separately, for both the item and armor; Here it's as simple as using something like \*\_helmet.
 
 ## Getting started
 WIP; There is no commandline interface yet, as the main goal at the moment is to make the basics functional.
