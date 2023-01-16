@@ -1,6 +1,9 @@
 # RePack
 An efficient new texture pack format that ""compiles"" to a normal minecraft texture pack.
 
+## Note
+This project is currently in its early stage and thus, cannot *fully* generate a texture pack (as the pack.mcmeta file currently does not automatically generate). The optifine CIT files however, work fine. Please understand that the project needs time to fully function and be usable.
+
 ## Main features and improvements
 - Any file/folder structure works, the ""compiler"" sees all of the repack (.rep) files as one big texture pack
 - (TODO) Templates, useful for not having to copypaste everything every time
@@ -33,7 +36,34 @@ match {
 Note that the vanilla optifine pack equivalent would have to match for every single item separately, for both the item and armor; Here it's as simple as using something like \*\_helmet.
 
 ## Getting started
-WIP; There is no commandline interface yet, as the main goal at the moment is to make the basics functional.
+### Requirements
+To use RePack, you need:
+- Java 17
+- A working computer
+- A keyboard
+- A terminal
+- At least a few MB of free memory on your disk
+- The newest release of this project on that same functioning computer.
+
+Download and unzip the project from the releases tab into any directory on your computer.
+
+### Compiling the example pack
+Open up your terminal in the same directory as the unzipped release you hopefully just downloaded. To see all commands:
+```sh
+java -jar RePack.jar help
+```
+Yeah, this is in it's early stages. It'll get easier to use in the future. To compile a workspace, use the 'compile' argument:
+```sh
+java -jar RePack.jar compile "path-in" "path-out"
+```
+Applying this to the example pack of this repo:
+```sh
+java -jar RePack.jar compile "test-workspace" "test-out"
+```
+And there you have it, a "test-out" folder should be generated, containing the texture pack.
+
+## Creating your own pack
+At the given moment, there is no wiki. As soon as we get around to making one, there will be all the info about how this works and how to use it.
 
 ## Goal
 The goal of RePack is to fully support everything that the optifine pack format supports, while making texture packs easily comprehensible, refactorable and expandable. RePack also shows you warnings and errors when ""compiling"" your pack, which might be annoying at times, but better than having to dig through minecraft logs when optifine doesn't let you do stuff (It doesn't even tell you ingame! It just either blacks out textures or refuses to retexture anything).
@@ -41,5 +71,4 @@ The goal of RePack is to fully support everything that the optifine pack format 
 ## Current TODOs
 - Custom item models
 - Templates
-- Commandline interface
 - In the future, a GUI interface, to create RePack texture packs graphically (will probably be a separate github repository)
