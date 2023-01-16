@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -68,8 +69,41 @@ public class PackWorkspace {
     }
 
     @NotNull
+    public static Optional<PackWorkspace> of(@NotNull final Path inPath) {
+        return new PackWorkspaceBuilder().setup(inPath.toFile());
+    }
+
+    @NotNull
+    public static Optional<PackWorkspace> of(@NotNull final String inPath) {
+        return new PackWorkspaceBuilder().setup(new File(inPath));
+    }
+
+    @NotNull
     public static Optional<PackWorkspace> of(@NotNull final File in) {
         return new PackWorkspaceBuilder().setup(in);
+    }
+
+    @NotNull
+    public static Optional<PackWorkspace> of(@NotNull final Logger logger, @NotNull final File in) {
+        return new PackWorkspaceBuilder(logger).setup(in);
+    }
+
+    @NotNull
+    public static Optional<PackWorkspace> of(@NotNull final Logger logger, @NotNull final Path inPath) {
+        return new PackWorkspaceBuilder(logger).setup(inPath.toFile());
+    }
+
+    @NotNull
+    public static Optional<PackWorkspace> of(@NotNull final Logger logger, @NotNull final String inPath) {
+        return new PackWorkspaceBuilder(logger).setup(new File(inPath));
+    }
+
+    public boolean compile(@NotNull final Path outPath) {
+        return compile(outPath.toFile());
+    }
+
+    public boolean compile(@NotNull final String outPath) {
+        return compile(new File(outPath));
     }
 
     public boolean compile(@NotNull final File out) {

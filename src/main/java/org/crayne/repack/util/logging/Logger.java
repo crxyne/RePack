@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.PrintStream;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -20,7 +21,7 @@ public class Logger extends PrintStream {
     public Logger() {
         super(nullOutputStream());
         out = System.out;
-        format = "(%c%%ll%%cr%): %c%%m%%cr%";
+        format = "[%hour%:%min%:%sec%] (%c%%ll%%cr%): %c%%m%%cr%";
     }
 
     public Logger(@NotNull final String format) {
@@ -44,8 +45,12 @@ public class Logger extends PrintStream {
         final String l = level.name().replace("_", " ");
         final String ll = l.toLowerCase();
         final String c = String.valueOf(level.color());
+        final LocalDateTime now = LocalDateTime.now();
 
         out.println(format
+                .replace("%min%", "" + now.getMinute())
+                .replace("%hour%", "" + now.getHour())
+                .replace("%sec%", "" + now.getSecond())
                 .replace("%l%", l)
                 .replace("%ll%", ll)
                 .replace("%c%", c)

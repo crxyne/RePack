@@ -1,1 +1,1 @@
-java -Xmx2G -Xms2G -jar RePack.jar
+java -jar RePack.jar compile "test-workspace" "test-out"

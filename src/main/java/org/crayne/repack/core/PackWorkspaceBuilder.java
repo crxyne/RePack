@@ -39,6 +39,12 @@ public class PackWorkspaceBuilder {
         this.encounteredError = false;
     }
 
+    public PackWorkspaceBuilder(@NotNull final Logger logger) {
+        this.logger = logger;
+        this.parser = new Parser(this.logger);
+        this.encounteredError = false;
+    }
+
     private void workspaceError(@NotNull final String message) {
         logger.error(message, LoggingLevel.CONVERTING_ERROR);
         encounteredError = true;
@@ -46,28 +52,34 @@ public class PackWorkspaceBuilder {
 
     @NotNull
     public Optional<PackWorkspace> setup(@NotNull final File directory) {
-        logger.info("Setting up workspace...");
-        logger.info("Parsing files...");
-        workspace = new PackWorkspace(logger);
-        final Set<Pair<File, Node>> trees = parseAllOfDirectory(directory);
-        if (encounteredError) {
-            workspaceError("Could not open workspace due to previous error; aborting.");
-            return Optional.empty();
-        }
-        if (trees.isEmpty()) {
-            logger.info("Nothing was parsed; no operation was performed.");
-            return Optional.empty();
-        }
-        logger.log("Successfully parsed all pack files of workspace.", LoggingLevel.SUCCESS);
-        logger.info("Loading workspace, reading parsed files...");
-        readPackFiles(trees, directory);
+        try {
+            logger.info("Setting up workspace...");
+            logger.info("Parsing files...");
+            workspace = new PackWorkspace(logger);
+            final Set<Pair<File, Node>> trees = parseAllOfDirectory(directory);
+            if (encounteredError) {
+                workspaceError("Could not open workspace due to previous error; aborting.");
+                return Optional.empty();
+            }
+            if (trees.isEmpty()) {
+                logger.info("Nothing was parsed; no operation was performed.");
+                return Optional.empty();
+            }
+            logger.log("Successfully parsed all pack files of workspace.", LoggingLevel.SUCCESS);
+            logger.info("Loading workspace, reading parsed files...");
+            readPackFiles(trees, directory);
 
-        if (encounteredError) {
-            workspaceError("Could not read parsed files due to previous error.");
+            if (encounteredError) {
+                workspaceError("Could not read parsed files due to previous error.");
+                return Optional.empty();
+            }
+            logger.log("Successfully finished loading all parsed files into workspace.", LoggingLevel.SUCCESS);
+            return Optional.ofNullable(workspace);
+        } catch (final Exception e) {
+            logger.error(e.getMessage());
+            e.printStackTrace(logger);
             return Optional.empty();
         }
-        logger.log("Successfully finished loading all parsed files into workspace.", LoggingLevel.SUCCESS);
-        return Optional.ofNullable(workspace);
     }
 
     @NotNull
@@ -333,7 +345,7 @@ public class PackWorkspaceBuilder {
     private Set<Pair<File, Node>> parseAllOfDirectory(@NotNull final File directory) {
         logger.info("Parsing all files of directory '" + directory.getAbsolutePath() + "'...");
 
-        if (!directory.isDirectory()) throw new IllegalArgumentException("Not a directory: " + directory);
+        if (!directory.isDirectory()) throw new IllegalArgumentException("Could not find directory: " + directory);
         try (final Stream<Path> paths = Files.walk(directory.toPath())) {
             final Set<File> files = paths.map(Path::toFile)
                     .filter(File::isFile)
