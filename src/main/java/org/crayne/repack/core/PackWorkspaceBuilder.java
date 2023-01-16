@@ -273,11 +273,23 @@ public class PackWorkspaceBuilder {
                 .filter(Objects::nonNull)
                 .toList();
 
-        final Optional<Token> customWeightToken = statement.children()
+        final Optional<Node> customWeightStatement = statement.children()
                 .stream()
                 .filter(n -> n.type() == NodeType.MATCH_WEIGHT_STATEMENT)
-                .findFirst()
-                .map(Node::value);
+                .findFirst();
+
+        boolean couldNotGetToken;
+        Optional<Token> customWeightToken = Optional.empty();
+        try {
+            customWeightToken = customWeightStatement.map(n -> n.child(2).value());
+            couldNotGetToken = customWeightStatement.isPresent() && customWeightToken.isEmpty();
+        } catch (final IndexOutOfBoundsException e) {
+            couldNotGetToken = true;
+        }
+        if (couldNotGetToken) {
+            workspaceError("An unexpected error occurred, could not retrieve custom weight from match statement");
+            return;
+        }
 
         final Optional<Integer> customWeight;
         try {

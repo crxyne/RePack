@@ -1,0 +1,20 @@
+let filename = "textures/emerald_armor"
+let name = "emerald armor"
+
+match {
+    display.Name = "ipattern:*$(name)*"
+    #weight = "10"
+} for {
+    items {
+        *_helmet     = "$(filename)_helmet"
+        *_chestplate = "$(filename)_chestplate"
+        *_leggings   = "$(filename)_leggings"
+        *_boots      = "$(filename)_boots"
+    }
+    armor {
+        *_helmet
+        *_chestplate
+        *_leggings
+        *_boots
+    } = "$(filename)"
+}

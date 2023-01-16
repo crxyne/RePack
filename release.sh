@@ -1,0 +1,1 @@
+zip -r RePack.zip RePack.jar test-workspace README.md

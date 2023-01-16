@@ -150,6 +150,7 @@ public class Parser {
             case LITERAL_ELYTRAS  -> parseElytras   (current);
             case IDENTIFIER       -> parseIdentifier(current);
             case SET              -> parseMapAll    (current);
+            case LITERAL_WEIGHT   -> parseWeight    (current);
             default -> {
                 unexpectedToken(current);
                 yield null;
@@ -182,6 +183,10 @@ public class Parser {
         if (n == NodeType.RBRACE || n == NodeType.IDENTIFIER) return parseIdentifierList(current);
 
         return parsePredicate(current);
+    }
+
+    private Node parseWeight(@NotNull final Token current) {
+        return parsePredicate(NodeType.MATCH_WEIGHT_STATEMENT, current, null);
     }
 
     private Node parsePredicate(@NotNull final Token current) {
@@ -226,20 +231,7 @@ public class Parser {
     }
 
     private Node parseMatch(@NotNull final Token current) {
-        final Token maybeWeight = currentToken();
-        if (NodeType.of(maybeWeight) != NodeType.LITERAL_WEIGHT)
-            return parseStatementScope(current, NodeType.MATCH_STATEMENT);
-
-        nextToken();
-        final Token weight = currentToken();
-        if (expect(weight, NodeType.STRING_LITERAL)) return null;
-
-        nextToken();
-        final Node statement = parseStatementScope(current, NodeType.MATCH_STATEMENT);
-        if (statement == null) return null;
-
-        statement.addChildren(new Node(NodeType.MATCH_WEIGHT_STATEMENT, weight));
-        return statement;
+        return parseStatementScope(current, NodeType.MATCH_STATEMENT);
     }
 
     private Node parseAny(@NotNull final Token current) {
