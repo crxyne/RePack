@@ -1,9 +1,8 @@
 package org.crayne.repack.conversion.cit;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.crayne.repack.conversion.match.ItemMatch;
 import org.crayne.repack.conversion.util.VanillaItem;
-import org.crayne.repack.conversion.util.TextureType;
 import org.crayne.repack.core.single.predicate.PackMatchPredicate;
 import org.crayne.repack.core.single.predicate.PackPredicate;
 import org.crayne.repack.core.single.predicate.PackSimplePredicate;
@@ -12,88 +11,69 @@ import org.crayne.repack.parsing.lexer.Token;
 import org.crayne.repack.util.logging.Logger;
 import org.crayne.repack.util.logging.LoggingLevel;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class CITPropertyFile {
+public interface CITPropertyFile {
+
 
     @NotNull
-    private final TextureType type;
+    String filePath();
 
     @NotNull
-    private final String textureFilePath;
+    String fileName();
 
     @NotNull
-    private final ItemMatch itemMatch;
+    String fileNameNoFiletype();
 
     @NotNull
-    private final Set<PackSimplePredicate> predicates;
+    ItemMatch itemMatch();
 
-    private final int weight;
+    @NotNull
+    Set<PackSimplePredicate> predicates();
 
-    public CITPropertyFile(@NotNull final TextureType type, @NotNull final String textureFilePath,
-                           @NotNull final ItemMatch itemMatch, @NotNull final Collection<PackSimplePredicate> predicates,
-                           final int weight) {
-        this.type = type;
-        this.textureFilePath = textureFilePath;
-        this.itemMatch = itemMatch;
-        this.predicates = new HashSet<>(predicates);
-        this.weight = weight;
+    int weight();
+
+    @NotNull
+    String compile();
+
+    @NotNull
+    default String itemMatchAsString() {
+        return itemMatch().matchAll()
+                ? ""
+                : "items=" + String.join(" ", itemMatch().items()) + "\n";
     }
 
     @NotNull
-    public String textureFilePath() {
-        return textureFilePath.endsWith(".png") ? textureFilePath : textureFilePath + ".png";
+    default String nbtMatchAsString() {
+        return predicates().stream()
+                .map(p -> "nbt." + p.key().token() + "=" + p.value())
+                .collect(Collectors.joining("\n")) + (weight() == 0 ? "" : "\n");
     }
 
     @NotNull
-    public String textureFileName() {
-        final String path = textureFilePath();
-        return path.contains("/") ? StringUtils.substringAfterLast(path, "/") : path;
+    default String weightAsString() {
+        return weight() == 0 ? "" : "weight=" + weight();
+    }
+
+    static boolean isSettingAll(@NotNull final Collection<PackPredicate> packPredicates, @NotNull final PackMatchPredicate matchPredicate) {
+        return packPredicates.stream().anyMatch(p -> p instanceof PackSupredicate
+                || matchPredicate.keys().isEmpty()
+                || p.keys().stream().anyMatch(t -> t.token().equals("*")));
     }
 
     @NotNull
-    public String textureFileNameNoFiletype() {
-        final String name = textureFileName();
-        return name.contains(".") ? StringUtils.substringBefore(name, ".") : name;
-    }
-
-    @NotNull
-    public String textureFileNameNoPNG() {
-        final String name = textureFileName();
-        return name.toLowerCase().endsWith(".png") ? name.substring(0, name.length() - ".png".length()) : name;
-    }
-
-    @NotNull
-    public ItemMatch itemMatch() {
-        return itemMatch;
-    }
-
-    @NotNull
-    public TextureType type() {
-        return type;
-    }
-
-    @NotNull
-    public Set<PackSimplePredicate> predicates() {
-        return predicates;
-    }
-
-    private record ItemMatch(@NotNull String texture, @Nullable TextureType type, @NotNull Collection<String> items, boolean matchAll) {
-
-    }
-
-    @NotNull
-    private static ItemMatch findItemMatches(@NotNull final PackPredicate p, @NotNull final Logger logger) {
-        final TextureType textureType = TextureType.of(p.type());
-        if (textureType == null) throw new RuntimeException("Match statement was found inside another");
-
-        return new ItemMatch(p.value(), textureType, new ArrayList<>(p.keys()
+    static List<String> findItemsMatchingPredicate(@NotNull final PackPredicate p, @NotNull final Logger logger) {
+        return p.keys()
                 .stream()
-                .map(tok -> Pair.of(tok, VanillaItem.moddedItem(tok.token()) ? Collections.singletonList(tok.token()) : VanillaItem.allMatching(tok.token()).stream().map(Enum::name).toList()))
+                .map(tok -> Pair.of(tok, VanillaItem.moddedItem(tok.token())
+                        ? Collections.singletonList(tok.token())
+                        : VanillaItem.allMatching(tok.token())
+                        .stream()
+                        .map(Enum::name)
+                        .toList())
+                )
                 .map(pair -> {
                     final List<String> matched = pair.getRight();
                     final Token tok = pair.getLeft();
@@ -102,165 +82,18 @@ public class CITPropertyFile {
                     return matched;
                 })
                 .flatMap(Collection::stream)
-                .toList()), false);
-    }
-
-    private static boolean isSettingAll(@NotNull final Collection<PackPredicate> packPredicates, @NotNull final PackMatchPredicate matchPredicate) {
-        return packPredicates.stream().anyMatch(p -> p instanceof PackSupredicate
-                || matchPredicate.keys().isEmpty()
-                || p.keys().stream().anyMatch(t -> t.token().equals("*")));
-    }
-
-    @NotNull
-    private static Set<ItemMatch> matchAll(@NotNull final Collection<PackPredicate> predicates) {
-        return predicates.stream()
-                .map(p -> new ItemMatch(p.value(), TextureType.of(p.type()), new HashSet<>(), true))
-                .peek(i -> Objects.requireNonNull(i.type()))
-                .collect(Collectors.toSet());
-    }
-
-    @NotNull
-    private static Set<ItemMatch> findMatches(@NotNull final Collection<PackPredicate> predicates, @NotNull final Logger logger) {
-        return predicates.stream()
-                .map(p -> findItemMatches(p, logger))
-                .collect(Collectors.toSet());
-    }
-
-    @NotNull
-    private static Map<TextureType, List<ItemMatch>> groupItemMatches(@NotNull final Map<TextureType, List<ItemMatch>> ungrouped) {
-        final Map<TextureType, List<ItemMatch>> itemMatchesGrouped = new HashMap<>();
-
-        ungrouped.forEach((t, is) -> {
-            final List<ItemMatch> found = ungrouped.get(t);
-            found.forEach(i -> {
-                final Optional<ItemMatch> existingMatch = itemMatchesGrouped.values().stream()
-                        .map(i2 -> i2.stream().filter(i3 -> i3.texture().equals(i.texture())).findAny())
-                        .filter(Optional::isPresent)
-                        .flatMap(Optional::stream)
-                        .findAny();
-
-                itemMatchesGrouped.putIfAbsent(t, new ArrayList<>());
-
-                if (existingMatch.isPresent()) {
-                    existingMatch.get().items().addAll(i.items());
-                    return;
-                }
-                itemMatchesGrouped.get(t).add(i);
-            });
-        });
-        return itemMatchesGrouped;
-    }
-
-    @NotNull
-    private static Map<TextureType, List<ItemMatch>> findMatches(@NotNull final Map<String, Set<PackPredicate>> textureFileMap,
-                                                                 @NotNull final PackMatchPredicate matchPredicate, @NotNull final Logger logger) {
-        return textureFileMap.keySet().stream().map(s -> {
-                    final Collection<PackPredicate> packPredicates = textureFileMap.get(s);
-                    final boolean setall = isSettingAll(packPredicates, matchPredicate);
-                    return setall ? matchAll(packPredicates) : findMatches(packPredicates, logger);
-                })
-                .flatMap(Collection::stream)
-                .collect(Collectors.groupingBy(ItemMatch::type));
-    }
-
-    @NotNull
-    private static Map<String, Set<PackPredicate>> textureFileMap(@NotNull final PackMatchPredicate matchPredicate) {
-        final Map<String, Set<PackPredicate>> textureFileMap = new HashMap<>();
-        matchPredicate.predicates().forEach(p -> {
-            textureFileMap.putIfAbsent(p.value(), new HashSet<>());
-            textureFileMap.get(p.value()).add(p);
-        });
-        return textureFileMap;
-    }
-
-    @NotNull
-    public static Set<CITPropertyFile> of(@NotNull final PackMatchPredicate matchPredicate, @NotNull final Logger logger, @NotNull final File out) {
-        final Map<String, Set<PackPredicate>> textureFileMap = textureFileMap(matchPredicate);
-        final Map<TextureType, List<ItemMatch>> itemMatches = findMatches(textureFileMap, matchPredicate, logger);
-
-        final Map<TextureType, List<ItemMatch>> itemMatchesGrouped = groupItemMatches(itemMatches);
-
-        return itemMatchesGrouped.keySet()
-                .stream()
-                .map(t -> itemMatchesGrouped.get(t)
-                        .stream()
-                        .map(i -> new CITPropertyFile(t, i.texture(), i, matchPredicate.matchPredicates(), matchPredicate.weight()))
-                        .collect(Collectors.toSet()))
-                .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
-    }
-
-    @NotNull
-    private String textureNamespacedKey(@NotNull final TextureType type, @NotNull final String s, @NotNull final String value) {
-        return switch (type) {
-            case ARMOR -> {
-                final String armor = StringUtils.substringBefore(s, "_");
-                yield "texture." + armor + "_layer_1" + "=" + value + "\n" + "texture." + armor + "_layer_2" + "=" + value;
-            }
-            case ARMOR_L1 -> {
-                final String armor = StringUtils.substringBefore(s, "_");
-                yield "texture." + armor + "_layer_1" + "=" + value;
-            }
-            case ARMOR_L2 -> {
-                final String armor = StringUtils.substringBefore(s, "_");
-                yield "texture." + armor + "_layer_2" + "=" + value;
-            }
-            case ELYTRAS -> "texture.elytra" + "=" + value;
-            case ITEMS -> "texture." + s + "=" + value;
-        };
-    }
-
-    @NotNull
-    private String textureOverrideAsString() {
-        if (itemMatch.matchAll) return "texture=" + textureFileNameNoPNG() + "\n";
-        final List<String> overrides = itemMatch.items()
-                .stream()
-                .map(s -> {
-                    assert itemMatch.type() != null;
-                    return textureNamespacedKey(itemMatch.type(), s, textureFileNameNoPNG());
-                })
-                .distinct()
                 .toList();
-
-        return String.join("\n", overrides) + "\n";
     }
 
     @NotNull
-    private String itemMatchAsString() {
-        return itemMatch.matchAll
-                ? ""
-                : "items=" + String.join(" ", itemMatch.items()) + "\n";
-    }
+    static Set<CITPropertyFile> of(@NotNull final PackMatchPredicate matchPredicate, @NotNull final Logger logger) {
+        final Set<CITTexturePropertyFile> textureFiles = CITTexturePropertyFile.of(matchPredicate, logger);
+        final Set<CITModelPropertyFile> modelFiles = CITModelPropertyFile.of(matchPredicate, logger);
 
-    @NotNull
-    private String nbtMatchAsString() {
-        return predicates.stream()
-                .map(p -> "nbt." + p.key().token() + "=" + p.value())
-                .collect(Collectors.joining("\n")) + (weight == 0 ? "" : "\n");
-    }
-
-    @NotNull
-    private String textureTypeAsString() {
-        return "type=" + type + "\n";
-    }
-
-    @NotNull
-    private String weightAsString() {
-        return weight == 0 ? "" : "weight=" + weight;
-    }
-
-    @NotNull
-    public String compile() {
-        return textureTypeAsString()
-                + itemMatchAsString()
-                + textureOverrideAsString()
-                + nbtMatchAsString()
-                + weightAsString();
-    }
-
-    @NotNull
-    public String toString() {
-        return "CITPropertyFile {\n" + compile().indent(3) + "}";
+        final Set<CITPropertyFile> result = new HashSet<>();
+        result.addAll(textureFiles);
+        result.addAll(modelFiles);
+        return result;
     }
 
 }

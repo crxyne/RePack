@@ -7,5 +7,4 @@ match {
 	items {
 		carved_pumpkin
 	} model = "$(filename).json"
-
 }

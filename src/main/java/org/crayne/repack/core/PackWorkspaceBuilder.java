@@ -84,7 +84,8 @@ public class PackWorkspaceBuilder {
 
     @NotNull
     private PackFile readPackFileNode(@NotNull final Pair<File, Node> tree, @NotNull final File root) {
-        return readPackFileNode(tree, null, root);
+        final PackFile preprocessed = preprocessPackFile(tree, null, root);
+        return readPackFileNode(tree, preprocessed, root);
     }
 
     private boolean checkTextureExists(@NotNull final File root, @NotNull final String child, @NotNull final Token at) {
@@ -320,8 +321,37 @@ public class PackWorkspaceBuilder {
         addTo.definePredicate(matchPredicate);
     }
 
-    private void defineModel(@NotNull final Node statement, @NotNull final PackFile addTo, @NotNull final PackMatchPredicate matchPredicate, @NotNull final File root) {
-        // TODO
+    private void defineModel(@NotNull final Node statement, @NotNull final PackFile addTo, @NotNull final PackMatchPredicate matchPredicate) {
+        final Token jsonToken = statement.child(2).value();
+        if (jsonToken == null) {
+            workspaceError("An unexpected error occurred, could not get value of JSON file in custom model specification node");
+            return;
+        }
+        final Node parentNode = statement.parent();
+        if (parentNode == null) {
+            workspaceError("An unexpected error occurred, could not get parent of malformed custom model specification node");
+            return;
+        }
+        final List<Optional<Token>> optionalIdentList = parentNode
+                .children()
+                .stream()
+                .filter(n -> n.type() == NodeType.IDENTIFIER_LIST)
+                .map(n -> n.children().stream().map(n2 -> Optional.ofNullable(n2.value())).toList())
+                .flatMap(Collection::stream)
+                .toList();
+
+        if (optionalIdentList.stream().anyMatch(Optional::isEmpty)) {
+            workspaceError("An unexpected error occurred, could not retrieve full identifier list of custom model specification node");
+            return;
+        }
+        final List<Token> keys = optionalIdentList
+                .stream()
+                .filter(Optional::isPresent)
+                .map(Optional::get).toList();
+
+        final String json = replaceVariables(jsonToken.noStringLiterals(), jsonToken, workspace.globalVariables(), addTo.variables());
+        final PackItemModelPredicate itemModelPredicate = new PackItemModelPredicate(keys, json);
+        matchPredicate.predicates().add(itemModelPredicate);
     }
 
     private void readForStatement(@NotNull final Node forStatement, @NotNull final PackFile addTo, @NotNull final PackMatchPredicate matchPredicate, @NotNull final File root) {
@@ -334,7 +364,7 @@ public class PackWorkspaceBuilder {
                 case ARMOR_SETALL_PREDICATE, ARMOR_L1_SETALL_PREDICATE, ARMOR_L2_SETALL_PREDICATE,
                         ITEM_SETALL_PREDICATE, ELYTRA_SETALL_PREDICATE -> defineSetAllPredicate(s, addTo, matchPredicate, root);
                 case MAPALL_PREDICATE -> defineMapAllPredicate(s, addTo, matchPredicate, root);
-                case MODEL_STATEMENT -> defineModel(s, addTo, matchPredicate, root);
+                case MODEL_STATEMENT -> defineModel(s, addTo, matchPredicate);
                 case LITERAL_FOR, LITERAL_ARMOR, LITERAL_ARMOR_L1, LITERAL_ARMOR_L2, LITERAL_ELYTRAS, LITERAL_ITEMS, LITERAL_ANY, IDENTIFIER_LIST -> {}
                 default -> workspaceError("An unexpected error occurred, invalid match-for node: unexpected sub-node " + s.type().name());
             }
@@ -348,6 +378,16 @@ public class PackWorkspaceBuilder {
             switch (statement.type()) {
                 case MATCH_STATEMENT -> readMatchStatement(statement, addTo, root);
                 case ANY_STATEMENT -> readAnyStatement(statement, addTo, root);
+            }
+        });
+        return addTo;
+    }
+
+    @NotNull
+    private PackFile preprocessPackFile(@NotNull final Pair<File, Node> tree, @Nullable final PackFile alreadyExisting, @NotNull final File root) {
+        final PackFile addTo = alreadyExisting == null ? new PackFile(tree.getLeft(), root) : alreadyExisting;
+        tree.getRight().children().forEach(statement -> {
+            switch (statement.type()) {
                 case LET_STATEMENT, GLOBAL_STATEMENT -> definePackVariable(statement, addTo);
             }
         });

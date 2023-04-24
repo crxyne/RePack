@@ -2,6 +2,7 @@ package org.crayne.repack.conversion;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.crayne.repack.conversion.cit.CITModelPropertyFile;
 import org.crayne.repack.conversion.cit.CITPropertyFile;
 import org.crayne.repack.core.PackWorkspaceBuilder;
 import org.crayne.repack.core.single.PackFile;
@@ -129,7 +130,7 @@ public class PackWorkspace {
         }
         final Set<Pair<PackFile, Set<CITPropertyFile>>> propertiesFiles = packFiles.stream().map(p -> Pair.of(p, p.matches()
                         .stream()
-                        .map(m -> CITPropertyFile.of((PackMatchPredicate) m, logger, out))
+                        .map(m -> CITPropertyFile.of((PackMatchPredicate) m, logger))
                         .flatMap(Collection::stream)
                         .collect(Collectors.toSet())))
                 .collect(Collectors.toSet());
@@ -146,10 +147,14 @@ public class PackWorkspace {
                     logger.info("\tCreating " + amt + " CIT properties files...");
 
                     pair.getRight().forEach(property -> {
+                        if (property instanceof CITModelPropertyFile) {
+                            // TODO finish item model properties
+                            return;
+                        }
                         File file;
                         int copyNumber = 0;
                         do {
-                            file = new File(cit, property.textureFileNameNoFiletype() + (copyNumber == 0 ? "" : String.valueOf(copyNumber)) + ".properties");
+                            file = new File(cit, property.fileNameNoFiletype() + (copyNumber == 0 ? "" : String.valueOf(copyNumber)) + ".properties");
                             copyNumber++;
                         } while (file.exists());
                         try {
@@ -160,10 +165,10 @@ public class PackWorkspace {
                             success.set(false);
                             return;
                         }
-                        final String destinationName = property.textureFileName();
+                        final String destinationName = property.fileName();
                         logger.info("\t\tCopying texture (" + destinationName + ")...");
 
-                        final File sourceTextureFile = new File(p.root(), property.textureFilePath());
+                        final File sourceTextureFile = new File(p.root(), property.filePath());
                         final File destinationTextureFile = new File(file.getParentFile(),
                                 destinationName.endsWith(".png")
                                         ? destinationName
