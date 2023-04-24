@@ -3,7 +3,6 @@ let name = "emerald armor"
 
 match {
     display.Name = "ipattern:*$(name)*"
-    #weight = "10"
 } for {
     items {
         *_helmet     = "$(filename)_helmet"
@@ -11,10 +10,17 @@ match {
         *_leggings   = "$(filename)_leggings"
         *_boots      = "$(filename)_boots"
     }
-    armor {
+    armor_l1 {
         *_helmet
         *_chestplate
         *_leggings
         *_boots
-    } = "$(filename)"
+    } = "$(filename)_layer_1"
+
+    armor_l2 {
+        *_helmet
+        *_chestplate
+        *_leggings
+        *_boots
+    } = "$(filename)_layer_2"
 }

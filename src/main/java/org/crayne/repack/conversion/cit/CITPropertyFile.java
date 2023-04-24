@@ -12,6 +12,7 @@ import org.crayne.repack.util.logging.Logger;
 import org.crayne.repack.util.logging.LoggingLevel;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -61,6 +62,17 @@ public interface CITPropertyFile {
         return packPredicates.stream().anyMatch(p -> p instanceof PackSupredicate
                 || matchPredicate.keys().isEmpty()
                 || p.keys().stream().anyMatch(t -> t.token().equals("*")));
+    }
+
+    @NotNull
+    default File finalizedFile(@NotNull final File cit) {
+        File file;
+        int copyNumber = 0;
+        do {
+            file = new File(cit, fileNameNoFiletype() + (copyNumber == 0 ? "" : String.valueOf(copyNumber)) + ".properties");
+            copyNumber++;
+        } while (file.exists());
+        return file;
     }
 
     @NotNull

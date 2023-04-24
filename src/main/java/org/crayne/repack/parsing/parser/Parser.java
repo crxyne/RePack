@@ -32,7 +32,7 @@ public class Parser {
     public Parser(@NotNull final Logger logger) {
         this.logger = logger;
         this.currentScope = new ArrayList<>();
-        this.tokenizer = new Tokenizer(logger);
+        this.tokenizer = new Tokenizer(logger, List.of("=>"));
     }
 
     private void parserError(@NotNull final String message, @NotNull final String... help) {
@@ -141,6 +141,7 @@ public class Parser {
             case LITERAL_LET      -> parseLet       (current);
             case LITERAL_GLOBAL   -> parseGlobal    (current);
             case LITERAL_MATCH    -> parseMatch     (current);
+            case LITERAL_COPY     -> parseCopy      (current);
             case LITERAL_ANY      -> parseAny       (current);
             case LITERAL_FOR      -> parseFor       (current);
             case LITERAL_ARMOR    -> parseArmor     (current);
@@ -149,6 +150,7 @@ public class Parser {
             case LITERAL_ITEMS    -> parseItems     (current);
             case LITERAL_ELYTRAS  -> parseElytras   (current);
             case IDENTIFIER       -> parseIdentifier(current);
+            case STRING_LITERAL   -> parseCopyFromTo(current);
             case SET              -> parseMapAll    (current);
             case LITERAL_MODEL    -> parseModel     (current);
             case LITERAL_WEIGHT   -> parseWeight    (current);
@@ -209,6 +211,20 @@ public class Parser {
         return Node.of(type, identifier, equals, value);
     }
 
+    private Node parseCopyFromTo(@NotNull final Token current) {
+        final Token equals = currentToken();
+        if (expect(equals, NodeType.MOVE)) return null;
+
+        nextToken();
+
+        final Token value = currentToken();
+        if (expect(value, NodeType.STRING_LITERAL)) return null;
+
+        nextToken();
+
+        return Node.of(NodeType.COPY_FROM_TO_STATEMENT, current, equals, value);
+    }
+
     private Node parseStatementScope(@NotNull final Token current, @NotNull final NodeType scopeType) {
         final Token lbrace = currentToken();
         if (expect(lbrace, NodeType.LBRACE)) return null;
@@ -233,6 +249,10 @@ public class Parser {
 
     private Node parseMatch(@NotNull final Token current) {
         return parseStatementScope(current, NodeType.MATCH_STATEMENT);
+    }
+
+    private Node parseCopy(@NotNull final Token current) {
+        return parseStatementScope(current, NodeType.COPY_STATEMENT);
     }
 
     private Node parseAny(@NotNull final Token current) {

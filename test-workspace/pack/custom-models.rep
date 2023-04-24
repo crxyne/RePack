@@ -1,10 +1,21 @@
 let name = "blue frog"
 let filename = "blue_frog"
 
+let filepath_texture_source = "textures/blue_frog.png"
+let filepath_texture_destination = "$(minecraft_textures)/hats/frog/blue_frog.png"
+
+let filepath_model_source = "models/blue_frog.json"
+let filepath_model_destination = "$(minecraft_optifine_cit)/blue_frog.json"
+
 match {
 	display.Name = "ipattern:*$(name)*"
 } for {
 	items {
 		carved_pumpkin
 	} model = "$(filename).json"
+}
+
+copy {
+    "$(filepath_texture_source)" => "$(filepath_texture_destination)"
+    "$(filepath_model_source)" => "$(filepath_model_destination)"
 }

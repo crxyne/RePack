@@ -7,6 +7,8 @@ public enum PredicateType {
     ARMOR_L1,
     ARMOR_L2,
     ELYTRAS,
-    MATCH
+    MATCH,
+    COPY,
+    COPY_FROM_TO
 
 }

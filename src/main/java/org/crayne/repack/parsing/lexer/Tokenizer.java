@@ -49,7 +49,7 @@ public class Tokenizer {
         this.logger = logger;
     }
 
-    private static final String specials = ",(){}/+='\"";
+    private static final String specials = ",(){}/+='\">";
     private static final String stringEscapeRegex = splitKeepDelim("\\\\u[\\dA-Fa-f]{4}|\\\\\\d|\\\\[\"\\\\'tnbfr]").substring(1);
 
     public static boolean isSpecialToken(@NotNull final String s) {

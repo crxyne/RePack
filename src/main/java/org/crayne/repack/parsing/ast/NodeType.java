@@ -34,6 +34,7 @@ public enum NodeType {
     PREDICATE_STATEMENT(null),
     MODEL_STATEMENT(null),
     COPY_STATEMENT(null),
+    COPY_FROM_TO_STATEMENT(null),
     STRING_LITERAL(null),
 
     // keywords
@@ -58,7 +59,8 @@ public enum NodeType {
     RBRACE("}"),
     LPAREN("("),
     RPAREN(")"),
-    SET("=");
+    SET("="),
+    MOVE("=>");
 
     private static final Map<String, NodeType> tokenToNode = new HashMap<>() {{
         for (final NodeType type : NodeType.values()) {

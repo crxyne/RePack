@@ -9,54 +9,48 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 
-// a single, simple value, e.g display.Name = "ipattern:*example*"
-public class PackSimplePredicate implements PackPredicate {
+public class PackCopyFromToPredicate implements PackPredicate {
 
     @NotNull
-    protected final Token key;
+    protected final String key;
 
     @NotNull
     protected final String value;
 
     @Nullable
-    protected final PredicateType type;
+    private PackCopyPredicate parent;
 
-    @Nullable
-    private PackMatchPredicate parent;
-
-    public PackSimplePredicate(@NotNull final Token key, @NotNull final String value, @Nullable final PredicateType type) {
+    public PackCopyFromToPredicate(@NotNull final String key, @NotNull final String value) {
         this.key = key;
         this.value = value;
-        this.type = type;
         this.parent = null;
     }
 
     @Nullable
-    public PackMatchPredicate parent() {
+    public PackCopyPredicate parent() {
         return parent;
     }
 
-    public void parent(@Nullable final PackMatchPredicate parent) {
+    public void parent(@Nullable final PackCopyPredicate parent) {
         this.parent = parent;
     }
 
     @NotNull
     public String toString() {
         return "PackSimplePredicate {" +
-                "key = '" + key.token() + '\'' +
+                "key = '" + key + '\'' +
                 ", value = '" + value + '\'' +
-                ", type = " + type +
                 '}';
     }
 
     @NotNull
-    public Token key() {
+    public String key() {
         return key;
     }
 
     @NotNull
     public Set<Token> keys() {
-        return Collections.singleton(key);
+        return Collections.singleton(Token.of(key));
     }
 
     @NotNull
@@ -66,20 +60,19 @@ public class PackSimplePredicate implements PackPredicate {
 
     @NotNull
     public PredicateType type() {
-        return Objects.requireNonNull(type);
+        return PredicateType.COPY_FROM_TO;
     }
 
     public boolean equals(@Nullable final Object obj) {
         if (obj == this) return true;
         if (obj == null || obj.getClass() != this.getClass()) return false;
-        final PackSimplePredicate that = (PackSimplePredicate) obj;
+        final PackCopyFromToPredicate that = (PackCopyFromToPredicate) obj;
         return Objects.equals(this.key, that.key) &&
-                Objects.equals(this.value, that.value) &&
-                Objects.equals(this.type, that.type);
+                Objects.equals(this.value, that.value);
     }
 
     public int hashCode() {
-        return Objects.hash(key, value, type);
+        return Objects.hash(key, value);
     }
 
 }

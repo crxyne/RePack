@@ -98,6 +98,21 @@ public class PackWorkspaceBuilder {
     }
 
     @Nullable
+    private PackCopyFromToPredicate defineCopyFromToPredicate(@NotNull final Node statement, @NotNull final PackFile addTo, @NotNull final File root) {
+        final Token from = statement.child(0).value();
+        final Token to = statement.child(2).value();
+
+        if (from == null || to == null) {
+            workspaceError("An unexpected error occurred, invalid AST node encountered for value statement");
+            return null;
+        }
+
+        final String finalFrom = replaceVariables(from.noStringLiterals(), from, workspace.globalVariables(), addTo.variables());
+        final String finalTo = replaceVariables(to.noStringLiterals(), to, workspace.globalVariables(), addTo.variables());
+        return new PackCopyFromToPredicate(finalFrom, finalTo);
+    }
+
+    @Nullable
     private PackSimplePredicate defineSimplePredicate(@NotNull final Node statement, @NotNull final PackFile addTo, @Nullable final PackMatchPredicate matchPredicate, @NotNull final File root) {
         final Token ident = statement.child(0).value();
         final Token value = statement.child(2).value();
@@ -321,6 +336,17 @@ public class PackWorkspaceBuilder {
         addTo.definePredicate(matchPredicate);
     }
 
+    private void readCopyStatement(@NotNull final Node statement, @NotNull final PackFile addTo, @NotNull final File root) {
+        final List<PackCopyFromToPredicate> copyPredicates = statement.children()
+                .stream()
+                .filter(n -> n.type() == NodeType.COPY_FROM_TO_STATEMENT)
+                .map(p -> defineCopyFromToPredicate(p, addTo, root))
+                .filter(Objects::nonNull)
+                .toList();
+
+        addTo.definePredicate(new PackCopyPredicate(copyPredicates));
+    }
+
     private void defineModel(@NotNull final Node statement, @NotNull final PackFile addTo, @NotNull final PackMatchPredicate matchPredicate) {
         final Token jsonToken = statement.child(2).value();
         if (jsonToken == null) {
@@ -378,6 +404,7 @@ public class PackWorkspaceBuilder {
             switch (statement.type()) {
                 case MATCH_STATEMENT -> readMatchStatement(statement, addTo, root);
                 case ANY_STATEMENT -> readAnyStatement(statement, addTo, root);
+                case COPY_STATEMENT -> readCopyStatement(statement, addTo, root);
             }
         });
         return addTo;
@@ -404,12 +431,11 @@ public class PackWorkspaceBuilder {
 
         if (!directory.isDirectory()) throw new IllegalArgumentException("Could not find directory: " + directory);
         try (final Stream<Path> paths = Files.walk(directory.toPath())) {
-            final Set<File> files = paths.map(Path::toFile)
+            final List<File> files = paths.map(Path::toFile)
                     .filter(File::isFile)
-                    .filter(f -> f.getName().endsWith(".rep"))
-                    .collect(Collectors.toSet());
+                    .filter(f -> f.getName().endsWith(".rep")).toList();
 
-            final Set<Pair<File, Optional<Node>>> optionalNodes = files.stream().map(f -> Pair.of(f, parse(f))).collect(Collectors.toSet());
+            final List<Pair<File, Optional<Node>>> optionalNodes = files.stream().map(f -> Pair.of(f, parse(f))).toList();
             if (optionalNodes.stream().anyMatch(p -> p.getRight().isEmpty())) throw new Exception("See previous error");
 
             return optionalNodes.stream().filter(p -> p.getRight().isPresent()).map(p -> Pair.of(p.getLeft(), p.getRight().get())).collect(Collectors.toSet());
@@ -442,7 +468,7 @@ public class PackWorkspaceBuilder {
 
         final boolean success = tree.isPresent() && new TreeAnalyzer(logger).analyze(tree.get(), content);
         if (!success) {
-            workspaceError("\t\tCould not parse pack file '" + packFile.getAbsolutePath() + "'.");
+            workspaceError("Could not parse pack file '" + packFile.getAbsolutePath() + "'.");
             return Optional.empty();
         }
         final long singleEndTime = System.currentTimeMillis();

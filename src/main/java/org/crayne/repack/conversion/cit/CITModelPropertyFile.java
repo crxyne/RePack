@@ -2,6 +2,7 @@ package org.crayne.repack.conversion.cit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.crayne.repack.conversion.match.ItemModelMatch;
+import org.crayne.repack.conversion.util.TextureType;
 import org.crayne.repack.core.single.PredicateType;
 import org.crayne.repack.core.single.predicate.PackItemModelPredicate;
 import org.crayne.repack.core.single.predicate.PackMatchPredicate;
@@ -40,18 +41,13 @@ public class CITModelPropertyFile implements CITPropertyFile {
     }
 
     @NotNull
-    private String modelTypeAsString() {
-        return "type=" + type + "\n";
-    }
-
-    @NotNull
     private String modelJsonAsString() {
         return "model=" + itemMatch.json() + "\n";
     }
 
     @NotNull
     public String filePath() {
-        return filePath.endsWith(".json") ? StringUtils.substringBeforeLast(filePath, ".") + ".png" : filePath + ".png";
+        return filePath;
     }
 
     @NotNull
@@ -83,6 +79,11 @@ public class CITModelPropertyFile implements CITPropertyFile {
     @NotNull
     public PredicateType type() {
         return type;
+    }
+
+    @NotNull
+    private String modelTypeAsString() {
+        return "type=" + Objects.requireNonNull(TextureType.of(type)) + "\n";
     }
 
     @NotNull

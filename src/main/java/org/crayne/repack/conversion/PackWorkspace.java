@@ -7,6 +7,7 @@ import org.crayne.repack.conversion.cit.CITPropertyFile;
 import org.crayne.repack.core.PackWorkspaceBuilder;
 import org.crayne.repack.core.single.PackFile;
 import org.crayne.repack.core.single.PackVariable;
+import org.crayne.repack.core.single.predicate.PackCopyPredicate;
 import org.crayne.repack.core.single.predicate.PackMatchPredicate;
 import org.crayne.repack.util.StringUtil;
 import org.crayne.repack.util.logging.Logger;
@@ -128,14 +129,58 @@ public class PackWorkspace {
             logger.error("Could not create pack CIT directory '" + cit.getAbsolutePath() + "'.");
             return false;
         }
+
+        final AtomicBoolean success = new AtomicBoolean(true);
+        packFiles.stream()
+                .map(p -> Pair.of(p, p.matches().stream()
+                        .filter(pr -> pr instanceof PackCopyPredicate)
+                        .map(pr -> (PackCopyPredicate) pr)
+                        .map(pr -> pr.copyFiles().entrySet())
+                        .flatMap(Collection::stream)
+                        .collect(Collectors.toSet())))
+                .forEach(packFilePair -> {
+                    final Set<Map.Entry<String, String>> copyFiles = packFilePair.getValue();
+                    final PackFile packFile = packFilePair.getLeft();
+                    copyFiles.forEach(copyFile -> {
+                        final File from = new File(packFile.root(), copyFile.getKey());
+                        final File to = new File(out, copyFile.getValue());
+
+                        if (!from.isFile()) {
+                            logger.error("Could not execute copy statement: file source was not found (source = " + from.getAbsolutePath() + ", destination = " + to.getAbsolutePath() + ")");
+                            success.set(false);
+                            return;
+                        }
+                        if (to.isFile()) {
+                            logger.warn("Copy statement warning: file destination already exists and will be replaced (source = " + from.getAbsolutePath() + ", destination = " + to.getAbsolutePath() + ")");
+                            return;
+                        }
+                        try {
+                            //noinspection ResultOfMethodCallIgnored
+                            to.mkdirs();
+                            Files.copy(from.toPath(), to.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException e) {
+                            logger.error("Could not execute copy statement (source = " + from.getAbsolutePath() + ", destination = " + to.getAbsolutePath() + "): " + e.getMessage());
+                            e.printStackTrace(logger);
+                            success.set(false);
+                            return;
+                        }
+                        logger.info("Copied file from " + from.getAbsolutePath() + " to " + to.getAbsolutePath() + " successfully");
+                    });
+                });
+
+        if (!success.get()) {
+            logger.error("Could not compile workspace; see above error.");
+            return false;
+        }
+
         final Set<Pair<PackFile, Set<CITPropertyFile>>> propertiesFiles = packFiles.stream().map(p -> Pair.of(p, p.matches()
                         .stream()
+                        .filter(pr -> pr instanceof PackMatchPredicate)
                         .map(m -> CITPropertyFile.of((PackMatchPredicate) m, logger))
                         .flatMap(Collection::stream)
                         .collect(Collectors.toSet())))
                 .collect(Collectors.toSet());
 
-        final AtomicBoolean success = new AtomicBoolean(true);
         propertiesFiles.forEach(pair -> {
                     final PackFile p = pair.getLeft();
                     logger.info("\tCompiling pack file '" + p.file().getAbsolutePath() + "'...");
@@ -144,19 +189,10 @@ public class PackWorkspace {
                         logger.log("Successfully compiled pack file (no operation was performed).", LoggingLevel.SUCCESS);
                         return;
                     }
-                    logger.info("\tCreating " + amt + " CIT properties files...");
+                    logger.info("\tCreating " + amt + " CIT properties file" + (amt == 1 ? "" : "s") + "...");
 
                     pair.getRight().forEach(property -> {
-                        if (property instanceof CITModelPropertyFile) {
-                            // TODO finish item model properties
-                            return;
-                        }
-                        File file;
-                        int copyNumber = 0;
-                        do {
-                            file = new File(cit, property.fileNameNoFiletype() + (copyNumber == 0 ? "" : String.valueOf(copyNumber)) + ".properties");
-                            copyNumber++;
-                        } while (file.exists());
+                        final File file = property.finalizedFile(cit);
                         try {
                             Files.writeString(file.toPath(), property.compile());
                         } catch (final IOException e) {
@@ -165,6 +201,8 @@ public class PackWorkspace {
                             success.set(false);
                             return;
                         }
+                        if (property instanceof final CITModelPropertyFile modelPropertyFile) return;
+
                         final String destinationName = property.fileName();
                         logger.info("\t\tCopying texture (" + destinationName + ")...");
 
@@ -180,7 +218,7 @@ public class PackWorkspace {
                         try {
                             Files.copy(sourceTextureFile.toPath(), destinationTextureFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                         } catch (final IOException e) {
-                            logger.error("\tCould not copy pack file texture '" + sourceTextureFile.getAbsolutePath() + "' to '" + destinationTextureFile.getAbsolutePath() + "': " + e.getMessage());
+                            logger.error("Could not copy pack file texture '" + sourceTextureFile.getAbsolutePath() + "' to '" + destinationTextureFile.getAbsolutePath() + "': " + e.getMessage());
                             e.printStackTrace(logger);
                             success.set(false);
                         }
@@ -188,6 +226,7 @@ public class PackWorkspace {
                     logger.log("\tSuccessfully compiled pack file.", LoggingLevel.SUCCESS);
                 });
         if (success.get()) logger.log("Successfully compiled workspace to '" + out.getAbsolutePath() + "'.", LoggingLevel.SUCCESS);
+        else logger.error("Could not compile workspace; see above error.");
         return success.get();
     }
 

@@ -43,6 +43,7 @@ public class TreeAnalyzer {
         this.put(NodeType.LET_STATEMENT,               List.of(NodeType.PARENT));
         this.put(NodeType.GLOBAL_STATEMENT,            List.of(NodeType.PARENT));
         this.put(NodeType.MATCH_STATEMENT,             List.of(NodeType.PARENT));
+        this.put(NodeType.COPY_STATEMENT,              List.of(NodeType.PARENT));
         this.put(NodeType.ANY_STATEMENT,               List.of(NodeType.PARENT));
         this.put(NodeType.FOR_STATEMENT,               List.of(NodeType.MATCH_STATEMENT));
         this.put(NodeType.WEIGHT_STATEMENT,            List.of(NodeType.MATCH_STATEMENT));
@@ -74,6 +75,8 @@ public class TreeAnalyzer {
 
         this.put(NodeType.MODEL_STATEMENT,             List.of(NodeType.ITEM_LISTING_PREDICATE, NodeType.ARMOR_LISTING_PREDICATE, NodeType.ELYTRA_LISTING_PREDICATE,
                                                                 NodeType.ARMOR_L1_LISTING_PREDICATE, NodeType.ARMOR_L2_LISTING_PREDICATE));
+
+        this.put(NodeType.COPY_FROM_TO_STATEMENT,      List.of(NodeType.COPY_STATEMENT));
     }};
 
     private boolean hasChildNode(@NotNull final Node parent, @Nullable final NodeType requiredParentType, @NotNull final NodeType... childType) {
