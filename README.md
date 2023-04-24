@@ -63,7 +63,7 @@ java -jar RePack.jar compile "test-workspace" "test-out"
 And there you have it, a "test-out" folder should be generated, containing the texture pack.
 
 ## Creating your own pack
-At the given moment, there is no wiki. As soon as we get around to making one, there will be all the info about how this works and how to use it.
+At the given moment, there is no wiki. As soon as I get around to making one, there will be all the info about how this works and how to use it.
 
 ## Goal
 The goal of RePack is to fully support everything that the optifine pack format supports, while making texture packs easily comprehensible, refactorable and expandable. RePack also shows you warnings and errors when ""compiling"" your pack, which might be annoying at times, but better than having to dig through minecraft logs when your pack has errors (Optifine doesn't even tell you ingame; It just either blacks out textures or refuses to retexture anything).
