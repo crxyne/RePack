@@ -69,6 +69,6 @@ At the given moment, there is no wiki. As soon as I get around to making one, th
 The goal of RePack is to fully support everything that the optifine pack format supports, while making texture packs easily comprehensible, refactorable and expandable. RePack also shows you warnings and errors when ""compiling"" your pack, which might be annoying at times, but better than having to dig through minecraft logs when your pack has errors (Optifine doesn't even tell you ingame; It just either blacks out textures or refuses to retexture anything).
 
 ## Current TODOs
-- Custom item models
+- pack.mcmeta file and automatic zipping of the texture pack after finishing
 - Templates
 - In the future, a GUI interface, to create RePack texture packs graphically (will probably be a separate github repository)
