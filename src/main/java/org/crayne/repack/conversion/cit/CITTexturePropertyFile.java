@@ -81,6 +81,17 @@ public class CITTexturePropertyFile implements CITPropertyFile {
         return predicates;
     }
 
+
+    @NotNull
+    public String itemMatchAsString() {
+        if (itemMatch().matchAll()) return "";
+        return "items=" + String.join(" ", switch (type) {
+            case ARMOR_L1 -> itemMatch().items().stream().filter(s -> !s.toLowerCase().endsWith("_leggings")).toList();
+            case ARMOR_L2 -> itemMatch().items().stream().filter(s -> s.toLowerCase().endsWith("_leggings")).toList();
+            default -> itemMatch().items();
+        }) + "\n";
+    }
+
     @NotNull
     public String compile() {
         return textureTypeAsString()

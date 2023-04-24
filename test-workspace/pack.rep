@@ -1,4 +1,5 @@
 global pack_name = "testing funni stuff"
+global pack_description = "funni tests i guess?"
 global pack_version = "1.19.2"
 
 global assets_minecraft = "assets/minecraft"

@@ -4,6 +4,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.crayne.repack.conversion.cit.CITModelPropertyFile;
 import org.crayne.repack.conversion.cit.CITPropertyFile;
+import org.crayne.repack.conversion.util.VersionPackFormat;
+import org.crayne.repack.conversion.util.ZipUtil;
 import org.crayne.repack.core.PackWorkspaceBuilder;
 import org.crayne.repack.core.single.PackFile;
 import org.crayne.repack.core.single.PackVariable;
@@ -100,10 +102,6 @@ public class PackWorkspace {
         return new PackWorkspaceBuilder(logger).setup(new File(inPath));
     }
 
-    public boolean compile(@NotNull final Path outPath) {
-        return compile(outPath.toFile());
-    }
-
     public boolean compile(@NotNull final String outPath) {
         return compile(new File(outPath));
     }
@@ -124,6 +122,30 @@ public class PackWorkspace {
             logger.error("Could not create new pack output directory '" + out.getAbsolutePath() + "'.");
             return false;
         }
+
+        final File packMcMeta = new File(out, "pack.mcmeta");
+        try {
+            final VersionPackFormat versionPackFormat = VersionPackFormat
+                    .of(globalVariables.stream()
+                            .filter(v -> v.name().equals("pack_version"))
+                            .findAny()
+                            .orElseThrow(() -> new RuntimeException("No pack version was defined in the RePack workspace. Use 'global pack_version = 1.X.X' to define the pack version."))
+                            .value()
+                    ).orElseThrow(() -> new RuntimeException(""));
+
+            final String packDescription = globalVariables.stream()
+                    .filter(v -> v.name().equals("pack_description"))
+                    .findAny()
+                    .map(PackVariable::value)
+                    .orElse("");
+
+            Files.writeString(packMcMeta.toPath(), "{\"pack\":{\"pack_format\":" + versionPackFormat.packFormat() + ",\"description\":\"" + packDescription + "\"}}");
+        } catch (final IOException | RuntimeException e) {
+            logger.error("Could not create pack.mcmeta file (" + packMcMeta.getAbsolutePath() + "): " + e.getMessage());
+            e.printStackTrace(logger);
+            return false;
+        }
+
         final File cit = new File(out, "assets/minecraft/optifine/cit");
         if (!cit.mkdirs()) {
             logger.error("Could not create pack CIT directory '" + cit.getAbsolutePath() + "'.");
@@ -225,8 +247,27 @@ public class PackWorkspace {
                     });
                     logger.log("\tSuccessfully compiled pack file.", LoggingLevel.SUCCESS);
                 });
-        if (success.get()) logger.log("Successfully compiled workspace to '" + out.getAbsolutePath() + "'.", LoggingLevel.SUCCESS);
-        else logger.error("Could not compile workspace; see above error.");
+
+        if (success.get())
+            logger.log("Successfully compiled workspace to '" + out.getAbsolutePath() + "'.", LoggingLevel.SUCCESS);
+        else {
+            logger.error("Could not compile workspace; see above error.");
+            try {
+                if (out.isDirectory()) FileUtils.deleteDirectory(out);
+            } catch (final IOException e) {
+                logger.error("Could not delete failed pack output directory '" + out.getAbsolutePath() + "': " + e.getMessage());
+                e.printStackTrace(logger);
+                return false;
+            }
+        }
+        try {
+            ZipUtil.zipDirectory(out, new File(out.getName() + ".zip"));
+            FileUtils.deleteDirectory(out);
+        } catch (final IOException e) {
+            logger.error("Could not pack output resource pack directory: " + e.getMessage());
+            e.printStackTrace(logger);
+            if (out.isDirectory()) logger.error("The resource pack is still usable at " + out.getAbsolutePath() + ", but it is not a zip file.");
+        }
         return success.get();
     }
 
