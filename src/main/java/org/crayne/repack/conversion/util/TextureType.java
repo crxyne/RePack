@@ -15,12 +15,12 @@ public enum TextureType {
     @Nullable
     public static TextureType of(@NotNull final PredicateType type) {
         return switch (type) {
-            case MATCH -> null;
             case ITEMS -> ITEMS;
             case ARMOR -> ARMOR;
             case ELYTRAS -> ELYTRAS;
             case ARMOR_L1 -> ARMOR_L1;
             case ARMOR_L2 -> ARMOR_L2;
+            default -> null;
         };
     }
 
